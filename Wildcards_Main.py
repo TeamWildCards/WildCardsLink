@@ -33,14 +33,18 @@ from easygui import *
 from serial import SerialException
 import serial
 from Wildcards_UserInterface import WildCardsUserInterface
-from Wildcards_serial import WildCardsSerial
+from Wildcards_Serial import WildCardsSerial
 from Wildcards_Firmata import WildcardsFirmata
 from Wildcards_Server import WildServer
+#import Wildcards_Logger
+from Wildcards_Logger import *
 
 class WildCardsMain:
     def __init__(self):
-        
+
         self.Exiting = False
+        self.has_active_server = False
+        self.start_server = None
         #initialize the System Tray icon for WildCards Link
         #self.WildUI = None
         self.WildUI = WildCardsUserInterface(parent=self)
@@ -55,18 +59,45 @@ class WildCardsMain:
 
         loop.create_task(self.CheckForNewUserInputs())
         
-        self.server = WildServer(self.WildFirmata)
-        start_server = websockets.serve(self.server.get_message, '127.0.0.1', 9000)
+        self.server = WildServer(parent=self, my_firmata=self.WildFirmata)
+        #self.KeepServerAlive()
+        #start_server = websockets.serve(self.server.get_message, '127.0.0.1', 9000)
         
         self._new_serial_port = None
-
-        print("server set up...")
-        loop.run_until_complete(start_server)
-        print("got past the run until complete...")
+        
+        loop.create_task(self.KeepServerAlive())
+        loop.create_task(self.WildFirmata.write_continuously())
+        #logstring("server set up...")
+        #loop.run_until_complete(start_server)
+        #logstring("got past the run until complete...")
  
     def StartSerial(self):
+        logstring("someone calling startserial")
         self.WildSerial.StartService()
-        
+    
+    
+    async def KeepServerAlive(self):
+        #while True:
+            #logstring("has active server = {}".format(self.has_active_server))
+            #if self.has_active_server:
+                #await asyncio.sleep(0.1)
+            #else:
+                #logstring("gothere1")
+                #self.has_active_server = True
+            if self.start_server is None:
+                self.start_server = websockets.serve(self.server.get_message, '127.0.0.1', 9000)
+            #logstring("gothere2")
+            logstring("sserv is {}".format(self.start_server))
+            
+            #asyncio.ensure_future(self.start_server, loop=loop)
+            await asyncio.gather(self.start_server, loop=loop)
+            
+            
+            #loop.create_task(self.start_server())
+            #logstring("gothere3")
+            #loop.run_until_complete(start_server)
+            await asyncio.sleep(0.1)
+       
     async def CheckForNewUserInputs(self):
         #last_serial_port = self._new_serial_port
         #print("1last {}   new  {}".format(last_serial_port, self._new_serial_port))
@@ -76,26 +107,18 @@ class WildCardsMain:
                 if self.Exiting is False:
                     self.Exiting = True
                     _signal_handler(1,1)
-            print("2last {}   new  {}".format(self.WildSerial.com_port, self._new_serial_port))
+
             if (self._new_serial_port is not None):
-                print("last {}   new  {}".format(self.WildSerial.com_port, self._new_serial_port))
-                #last_serial_port = self._new_serial_port
-                print("starting an await")
                 await self.WildSerial.OpenNamedSerialPort(self._new_serial_port)
-                print("ending an await")
                 self._new_serial_port = None
             await asyncio.sleep(0.1, loop=loop)
             #print("4last {}   new  {}".format(last_serial_port, self._new_serial_port))
             
     async def SerialOpened(self):
         """ called by Wildcards_serial """
-        print("got to SerialOpened1")
         self.WildUI.UpdateCurrentPort(self.WildSerial.CurrentPort.com_port)
-        print("got to SerialOpened2")
         self.WildUI.UpdateCurrentPortStatusGood(True)
-        print("got to SerialOpened3")
-        await self.WildFirmata.assign_serial_port(self.WildSerial.CurrentPort)
-        print("got to SerialOpened3")
+        await self.WildFirmata.assign_serial_port(self.WildSerial)  #this WildSerial will have a CurrentPort object
         
     def SerialClosed(self):
         self.WildUI.UpdateCurrentPort(None)
@@ -121,9 +144,9 @@ class WildCardsMain:
         :param portname:  the name of the port that has been selected by the user
         :returns: No return value.
         """
-        print("selecting main port now: {}".format(portname))
+        logstring("selecting main port now: {}".format(portname))
         self._new_serial_port = portname
-        print("selected main port now: {}".format(portname))
+        logstring("selected main port now: {}".format(portname))
         #loop.call_soon_threadsafe(self.SelectUserSpecifiedPort_Threadsafe(portname))
         
 
@@ -148,28 +171,28 @@ class WildCardsMain:
             await asyncio.sleep(0.1)
 """
 
- usage: pymata_iot.py [-h] [-host HOSTNAME] [-port PORT] [-wait WAIT]
-                 [-comport COM] [-sleep SLEEP] [-log LOG]
+ usage: Wildcards_link.py [-h] [--host HOSTNAME] [--port PORT] [--wait WAIT]
+                 [--comport COM] [--sleep SLEEP] [--verbose VERBOSE] [--log LOG]
 
     optional arguments:
-      -h, --help      show this help message and exit
-      -host HOSTNAME  Server name or IP address
-      -port PORT      Server port number
-      -wait WAIT      Arduino wait time
-      -comport COM    Arduino COM port
-      -sleep SLEEP    sleep tune in ms.
-      -log LOG        True = send output to file, False = send output to console
-      -ardIPAddr ADDR Wireless module ip address (WiFly)
-      -ardPort PORT   Wireless module ip port (Wifly)
-      -handshake STR  Wireless device handshake string (WiFly)
+      -h, --help           show this help message and exit
+      --host HOSTNAME      Server name or IP address
+      --port PORT          Server port number
+      --wait WAIT          Arduino wait time
+      --comport COM        Arduino COM port
+      --sleep SLEEP        sleep tune in ms.
+      -v --verbose VERBOSE send output to file      
+      -l --logging LOG     send output to console
 """
 
 parser = argparse.ArgumentParser()
-parser.add_argument("-host", dest="hostname", default="localhost", help="Server name or IP address")
-parser.add_argument("-port", dest="port", default="9000", help="Server port number")
-parser.add_argument("-wait", dest="wait", default="2", help="Arduino wait time")
-parser.add_argument("-comport", dest="com", default="None", help="Arduino COM port")
-parser.add_argument("-sleep", dest="sleep", default=".001", help="sleep tune in ms.")
+parser.add_argument("--host", dest="hostname", default="localhost", help="Server name or IP address")
+parser.add_argument("--port", dest="port", default="9000", help="Server port number")
+parser.add_argument("--wait", dest="wait", default="2", help="Reset wait time in seconds")
+parser.add_argument("--comport", dest="com", default="None", help="COM port")
+parser.add_argument("--sleep", dest="sleep", default=".001", help="sleep tune in ms.")
+parser.add_argument("-v", "--verbose", dest="verbose", action="store_true", help="increase output verbosity")
+parser.add_argument("-l", "--logging", dest="logging", action="store_true", help="log outputs to ./Wildcards.log")
 
 args = parser.parse_args()
 
@@ -177,13 +200,27 @@ if args.com == 'None':
     comport = None
 else:
     comport = args.com
+    
+    
 
+#global_log_output = args.logging
+#global_verbose = args.verbose    
+#global_verbose = True            
+#global_log_output = True
 
-###remove this later
+#last_logstring = ""
+
+#Wildcards_Logger.setup_global_log_output(args.logging, args.verbose)
+#Wildcards_Logger.setup_global_log_output(True, True)
+setup_global_log_output(True, True)
+
+#remove this later? only makes sense when run from console because this runs in the background
+
+#catch WM_CLOSE for windows?
 def _signal_handler(sig, frame):
-
+    #schedule the closing of all asynchronous generator objects via calls to aclose()
     loop.create_task(loop.shutdown_asyncgens())
-    #MainObject.ShutdownUI()
+
     try:
         loop.stop()
     except:
@@ -196,7 +233,7 @@ def _signal_handler(sig, frame):
         sys.exit()       
     except SystemExit:
         pass
-    #print('\nFinished Cleaning Up, Bye!')
+    logstring('\nFinished Cleaning Up, Bye!')
     
 
 signal.signal(signal.SIGINT, _signal_handler)
@@ -204,6 +241,7 @@ signal.signal(signal.SIGTERM, _signal_handler)
 
 loop = asyncio.get_event_loop()
 
+'''
 logging.getLogger('asyncio').setLevel(logging.WARNING)
 logging.basicConfig(level=logging.DEBUG) 
 
@@ -211,6 +249,8 @@ logging.basicConfig(level=logging.DEBUG)
 fh = logging.FileHandler('spam.log')
 fh.setLevel(logging.DEBUG)
 loop.set_debug(True)
+'''
+
 
 try:
 
@@ -219,20 +259,21 @@ try:
     MainObject = WildCardsMain()
     #loop.create_task(MainObject.statusprinter())
     loop.create_task(MainObject.SystrayExitChecker())
-    MainObject.StartSerial()
+    logstring("I'm the one calling startserial")
+    #MainObject.StartSerial()
     #loop.create_task(MainObject.statusprinter())
     #loop.create_task(MainObject.SystrayExitChecker())
     loop.run_forever()
     
     MainObject.ShutdownUI()
     sys.exit()
-    print("neverseethis")
+    logstring("neverseethis")
 except serial.serialutil.SerialException:
-    print('problem closing the loop')
+    logstring('problem closing the loop')
     MainObject.ShutdownUI()  
     sys.exit()
 except RuntimeError:
-    print('got here1')
+    logstring('got here1')
     MainObject.ShutdownUI()  
     sys.exit()
 	

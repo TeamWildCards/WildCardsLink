@@ -1,101 +1,103 @@
+"""
+ Copyright (c) 2018 Dynamic Phase, LLC All rights reserved.
+ 
+ This program is free software; you can redistribute it and/or
+ modify it under the terms of the GNU AFFERO GENERAL PUBLIC LICENSE
+ Version 3 as published by the Free Software Foundation; either
+ or (at your option) any later version.
+ This library is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ General Public License for more details.
 
-class Port:
-    def __init__(self, parent=None, com_port=None, speed=57600, sleep_tune=.5):
+ You should have received a copy of the GNU AFFERO GENERAL PUBLIC LICENSE
+ along with this library; if not, write to the Free Software
+ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+"""
+
+from Wildcards_Logger import *
+from Wildcards_SerialPortChecker import SerialPortChecker
+import serial
+import asyncio
+
+class SerialPort:
+    def __init__(self, parent, com_port, speed=57600, sleep_tune=.01):
         self._parent = parent
-        self._IsPortOpen = False
-        self._IsPortAvailable = False
         self.com_port = com_port
+        
         self.sleep_tune = sleep_tune
         self.speed = speed
-        self._timetocheck = 0  #how long did it take to check the port?
-        self._start = time.time()
-        self._end = time.time()
-        self.localworker = None
-        self.localworker_loop = None
-        self._checked = False
+        
+        self._IsPortOpen = False
+
+        
+        #had_error indicates whether there was a write error or "this isn't Firmata" error
+        #since the port was last available
         self.had_error = False
         self.my_serial = None
         
-        
-        
-    def AutoEnumerate(self)
-        if self.localworker is None:
-                worker_loop = asyncio.new_event_loop()
-                worker = Thread(target=self.start_loop, args=(worker_loop,))
-                # Start the thread
-                worker.daemon = True  #ensure the threads are killed when the process ends
-                worker.start()
-                self.localworker = worker
-                self.localworker_loop = worker_loop
-            self.localworker_loop.call_soon_threadsafe(self.CheckPort, port)
-
-    def start_loop(self, loop):
-        asyncio.set_event_loop(loop)
-        loop.run_forever()             
-            
-    def CheckPort(self): #checking to see if the port is available
-        #print("Running CheckPort  {}   {}   {}".format(self._timetocheck, self._start, self._end))
-        #print("checking port on {}".format(self.com_port))
-        if self.com_port is not None:
-            if self._IsPortOpen == False:
-                #only very infrequency check ports that take too long to check
-                #they are likely throwing an OS error
-                if (self._timetocheck < 0.3) or ((self._end + self._timetocheck * 100) < time.time()):
-                    self._start = time.time()
-                    try:
-                        serialport = serial.Serial(self.com_port, self.speed, timeout=10)
-                        serialport.close()
-                        print("found ports {}...{}".format(self.com_port, self._timetocheck))
-                        self._MarkPortAvailable()
-                    except serial.SerialException as e:
-                        #print("error number {}".format(e))
-                        self._MarkPortUnavailable()
-                        pass
-                    self._end = time.time()
-                    self._timetocheck = self._end - self._start
-                    #print("time to check {} was {}".format(self.com_port, self._timetocheck))
-            else:
-                self._MarkPortAvailable()
-        else:
-            self._MarkPortUnavailable()
-        self._checked = True
-
+        self._SerialPortChecker = SerialPortChecker(self)
+        self._SerialPortChecker.Auto_Enumerate()
+        loop = asyncio.get_event_loop()
+        loop.create_task(self._KeepAvailabilityUpToDate())
+   
+    @property
     def IsPortAvailable(self):
-        return self._IsPortAvailable
+        return self._SerialPortChecker.IsPortAvailable
+
+    @property
+    def HasBeenCheckedForAvailability(self):
+        return self._SerialPortChecker.Checked
         
+    @property
     def IsPortOpen(self):
         return self._IsPortOpen
         
-    def _MarkPortAvailable(self):
-        if self._IsPortAvailable == False:
-            self._IsPortAvailable = True
-            self.had_error = False #no known errors so far
-            self._parent.AppendToPortList(self.com_port)
+    # def _MarkPortAvailable(self):
+        # if self.IsPortAvailable == False:
+            # self.IsPortAvailable = True
+            # self.had_error = False #no known errors so far
+            # self._parent.AppendToPortList(self.com_port)
             
-    def _MarkPortUnavailable(self):
-        if self._IsPortAvailable:
-            self._IsPortAvailable = False
-            self._parent.RemoveFromPortList(self.com_port) 
-        if self._IsPortOpen:
-            self.my_serial.close()
-            self._MarkPortClosed()
+    # def _MarkPortUnavailable(self):
+        # if self.IsPortAvailable:
+            # self.IsPortAvailable = False
+            # self._parent.RemoveFromPortList(self.com_port) 
+        # if self._IsPortOpen:
+            # self.my_serial.close()
+            # self._MarkPortClosed()
 
     async def _MarkPortOpen(self):
         if self._IsPortOpen == False:
+            logstring("Marking _IsPortOpen for port {}".format(self.com_port))
             self._IsPortOpen = True
             await self._parent.PortOpened()
 
     def _MarkPortClosed(self):
         if self._IsPortOpen == True:
+            logstring("Marking _IsPortOpen as FALSE for port {}".format(self.com_port))    
             self._IsPortOpen = False
             self._parent.PortClosed(self.com_port)
             
     def get_serial(self):
         return self.my_serial
 
-    def HasBeenCheckedForAvailability(self):
-        return self._checked
-                    
+    async def _KeepAvailabilityUpToDate(self):
+        lastknownstatus = self.IsPortAvailable
+        while True:
+            if lastknownstatus != self.IsPortAvailable:
+                logstring("port availability chagned!!!!!!!!!")
+                if self.IsPortAvailable:
+                    logstring("reverting had_error back to false")
+                    self.had_error = False #no known errors so far
+                    self._parent.AppendToPortList(self.com_port)
+                else:
+                    self._parent.RemoveFromPortList(self.com_port) 
+                    self.my_serial.close()
+                    self._MarkPortClosed()
+                lastknownstatus = self.IsPortAvailable
+            await asyncio.sleep(0.1)    
+            
     def write(self, data):
         """
         This is s call to pyserial write. It provides a
@@ -105,13 +107,18 @@ class Port:
         :param data: Data to be written
         :return: Number of bytes written
         """
-        if self._IsPortAvailable and self._IsPortOpen:
+        if self._SerialPortChecker.IsPortAvailable and self._IsPortOpen:
             result = None
             try:
-                result = self.my_serial.write(bytes([ord(data)]))
-                print('Wrote {} on {}!'.format(ord(data),self.com_port))
+                for d in data:
+                    result = self.my_serial.write(bytes([ord(d)]))
+                #result = self.my_serial.write(data.encode('utf-8'))
+                #print('Wrote {} on {}!'.format(ord(data),self.com_port))
+                    logstring('Wrote {} on {}!'.format(bytes([ord(d)]),self.com_port))
+                #logstring('Wrote {} on {}!'.format(data.encode('utf-8'),self.com_port))
             except serial.SerialTimeoutException:
                 try:
+                    logstring("TimeoutError while writing")
                     self.had_error = True
                     self.my_serial.close()
                     self._MarkPortClosed()
@@ -119,6 +126,7 @@ class Port:
                     raise                
             except serial.SerialException:
                 try:
+                    logstring("SerialException while writing")
                     self.had_error = True
                     self.my_serial.close()
                     self._MarkPortClosed()
@@ -126,84 +134,64 @@ class Port:
                     raise
             if result:
                 return result
+        else:
+            logstring("not going to write {}".format(data))
+            #pass
+                
   
-    async def readline(self):
-        """
-        This is an asyncio-adapted version of pyserial read.
-        It provides a non-blocking read and returns a line of data read.
-
-        :return: A line of data
-        """
-        # wait for a line to become available and read from
-        # the serial port
-        data = ""
-        while True:
-            try:
-                newchar = await self.read()
-                data += newchar
-                if newchar == 10: #if "\n" newline character is encountered
-                    return data
-            except serial.SerialException:
-                try:
-                    self.had_error = True
-                    self.my_serial.close()
-                    self._MarkPortClosed()
-                except:  
-                    raise
-
     async def read(self):
         """
-        This is an asyncio-adapted version of pyserial read
-        that provides non-blocking read.
+        This is performs a read if there is any data waiting
+        Otherwise it will return None and perform a brief sleep along the way
 
         :return: One character
         """
 
         # wait for a character to become available and read from
         # the serial port
-        while True:
-            if (self.my_serial is not None):
-                print("attempting a read: is it inwaiting? {}".format(self.my_serial.inWaiting()))
-                try:            
-                    if not self.my_serial.inWaiting():
-                        print("giving up on read for now")
-                        await asyncio.sleep(self.sleep_tune)
-                    else:
-                        print("found some data for read")
-                        data = self.my_serial.read()
-                        print("returning data from read")
-                        return ord(data)
-                except serial.SerialException:
-                    try:
-                        self.had_error = True
-                        self.my_serial.close()
-                        self._MarkPortClosed()
-                    except:  
-                        raise
-            else:
-                print("There is no port to read from!!!!!!!!!!!!!  EEEEEEEK!")
-                await asyncio.sleep(self.sleep_tune)
-                print("Woke up from the read sleep...")
+        if (self.my_serial is not None) and self._SerialPortChecker.IsPortAvailable and self._IsPortOpen:
+            #logstring("attempting a read: is it inwaiting? {}".format(self.my_serial.inWaiting()))
+            try:            
+                if not self.my_serial.inWaiting():
+                    #logstring("inWaiting is false, so sleeping for a bit..")
+                    await asyncio.sleep(self.sleep_tune)
+                    return None
+                else:
+                    data = self.my_serial.read()
+                    return ord(data)
+            except serial.SerialException:
+                try:
+                    self.had_error = True
+                    self.my_serial.close()
+                    self._MarkPortClosed()
+                    return None
+                except:  
+                    raise
+        else:
+            await asyncio.sleep(self.sleep_tune)
+            return None
 
+    
     def close(self):
         """
         Close the serial port
         """
-        if self._IsPortAvailable and self._IsPortOpen:
+        if self._SerialPortChecker.IsPortAvailable and self._IsPortOpen:
             self.my_serial.close()
-            print("closing up new: port {}".format(self.com_port))
+            logstring("Closing up port {}".format(self.com_port))
             self._MarkPortClosed()
 
     async def open(self):
         """
         Open the serial port
         """
-
-        if self._IsPortAvailable and (self._IsPortOpen == False):
-            self.my_serial = serial.Serial(self.com_port, self.speed, timeout=1,
-                                               writeTimeout=1)
+        logstring("Yay, we're in the CurrentPort, about to open it  {}     {}".format(self._SerialPortChecker.IsPortAvailable, self._IsPortOpen))
+        
+        if self.IsPortAvailable and (self._IsPortOpen == False):
+            logstring("iT IS AVAILable and not already open")
+            self.my_serial = serial.Serial(self.com_port, self.speed, timeout=1, writeTimeout=1)
             #self.my_serial.open()
-            print("opening up new port: {} and clearing input output buffers".format(self.com_port))
+            logstring("Opening up port {} and clearing input output buffers".format(self.com_port))
             
             self.my_serial.reset_output_buffer()
             self.my_serial.reset_input_buffer()

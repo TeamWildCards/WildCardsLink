@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 """
  Copyright (c) 2015-2017 Alan Yorinks All rights reserved.
-
+ Copyright (c) 2018 Dynamic Phase, LLC All rights reserved.
+ 
  This program is free software; you can redistribute it and/or
  modify it under the terms of the GNU AFFERO GENERAL PUBLIC LICENSE
  Version 3 as published by the Free Software Foundation; either
@@ -28,15 +29,20 @@ from pymata_aio.constants import Constants
 from serial import SerialException
 import serial
 
+from Wildcards_Logger import *
+
 class WildServer:
-    def __init__(self, my_firmata):
+    def __init__(self, parent, my_firmata):
         self.core = my_firmata
+        
+        self.parent = parent
 
         self.command_map = {
             "analog_read": self.analog_read,
             "analog_write": self.analog_write,
             "digital_read": self.digital_read,
             "digital_write": self.digital_write,
+            "digital_pin_write": self.digital_pin_write,
             "disable_analog_reporting": self.disable_analog_reporting,
             "disable_digital_reporting": self.disable_digital_reporting,
             "enable_analog_reporting": self.disable_analog_reporting,
@@ -77,12 +83,13 @@ class WildServer:
         :param path: path
         :return:
         """
+        #logstring("gothere5")
 
         self.websocket = websocket
         try:
             while True:
                 payload = await self.websocket.recv()
-
+                logstring("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!recieved a payload {}".format(payload))
                 # cmd_dict = json.loads(payload.decode('utf8'))
                 cmd_dict = json.loads(payload)
                 client_cmd = cmd_dict.get("method")
@@ -97,7 +104,9 @@ class WildServer:
         except websockets.exceptions.ConnectionClosed:
             #need a more graceful exit than this...
             #sys.exit()
-            print('Websocket connection closed')
+            logstring('Websocket connection closed')
+            #self.parent.has_active_server = False
+    
 
     async def analog_read(self, command):
         """
@@ -125,7 +134,7 @@ class WildServer:
         """
         pin = int(command[0])
         value = int(command[1])
-        await self.core.analog_write(pin, value)
+        self.core.analog_write(pin, value)
 
     async def digital_read(self, command):
         """
@@ -142,7 +151,7 @@ class WildServer:
         reply = json.dumps({"method": "digital_read_reply", "params": [pin, data_val]})
         await self.websocket.send(reply)
 
-    async def digital_write(self, command):
+    async def digital_pin_write(self, command):      
         """
         This method writes a zero or one to a digital pin.
 
@@ -151,8 +160,22 @@ class WildServer:
         """
         pin = int(command[0])
         value = int(command[1])
-        await self.core.digital_write(pin, value)
+        logstring("writing pin {} value {}".format(pin, value))
+        self.core.digital_write(pin, value)
+        
+    async def digital_write(self, command):
+        """
+        This method writes a zero or one to a digital pin.
 
+        :param command: {"method": "digital_write", "params": [PIN, DIGITAL_DATA_VALUE]}
+        :returns: No return message..
+        """
+        logstring("doing digital write")
+        pin = int(command[0])
+        value = int(command[1])
+        self.core.digital_write(pin, value)
+        logstring("done digital write")
+        
     async def disable_analog_reporting(self, command):
         """
         Disable Firmata reporting for an analog pin.
@@ -411,7 +434,6 @@ class WildServer:
 
         await self.core.i2c_read_request(device_address, register, number_of_bytes, read_type,
                                          self.i2c_read_request_callback)
-        await asyncio.sleep(.1)
 
     async def i2c_write_request(self, command):
         """
@@ -494,7 +516,7 @@ class WildServer:
             cb = None
 
         await self.core.set_pin_mode(pin, mode, cb)
-
+        
     async def set_sampling_interval(self, command):
         """
         This method sets the Firmata sampling interval in ms.
@@ -594,6 +616,7 @@ class WildServer:
         :param data: digital callback message
         :returns:{"method": "digital_message_reply", "params": [PIN, DATA_VALUE]}
         """
+        logstring("sending digital message reply {}".format(data))
         reply = json.dumps({"method": "digital_message_reply", "params": [data[0], data[1]]})
         asyncio.ensure_future(self.websocket.send(reply))
 
