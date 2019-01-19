@@ -16,7 +16,11 @@
 """
 
 import sys
-from systray.traybar import SysTrayIcon
+
+if sys.platform.startswith('darwin'):
+    pass
+else:
+    from systray.traybar import SysTrayIcon
 
 def do_nothing(sysTrayIcon, index_number, menu_text):
     pass
