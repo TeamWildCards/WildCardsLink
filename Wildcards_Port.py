@@ -23,7 +23,9 @@ from Wildcards_Pin import Pin
 
 
 class Port(WildcardsFirmataBaseObject):
-
+    '''
+    This object represents a port (a collection of 8 pins, typically) on the microcontroller
+    '''
     def __init__(self, ID, PortNum):
         super().__init__(ID)
 

@@ -35,7 +35,7 @@ class WildServer:
     def __init__(self, parent, my_firmata):
         self.core = my_firmata
         
-        self.parent = parent
+        self._parent = parent
 
         self.command_map = {
             "analog_read": self.analog_read,
@@ -74,6 +74,8 @@ class WildServer:
             "stepper_step": self.stepper_step
         }
         self.websocket = None
+        #set default port number to 9000
+        self.portnumber = 9000
 
     # noinspection PyUnusedLocal
     async def get_message(self, websocket, path):
@@ -83,8 +85,7 @@ class WildServer:
         :param path: path
         :return:
         """
-        #logstring("gothere5")
-
+         
         self.websocket = websocket
         try:
             while True:
@@ -102,11 +103,8 @@ class WildServer:
                     else:
                         await cmd()
         except websockets.exceptions.ConnectionClosed:
-            #need a more graceful exit than this...
-            #sys.exit()
-            logstring('Websocket connection closed')
-            #self.parent.has_active_server = False
-    
+            logstring('One of the websocket connections has closed')
+
 
     async def analog_read(self, command):
         """

@@ -86,7 +86,7 @@ class SerialPort:
         lastknownstatus = self.IsPortAvailable
         while True:
             if lastknownstatus != self.IsPortAvailable:
-                logstring("port availability chagned!!!!!!!!!")
+                logstring("port availability changed!!!!!!!!!")
                 if self.IsPortAvailable:
                     logstring("reverting had_error back to false")
                     self.had_error = False #no known errors so far
@@ -132,10 +132,18 @@ class SerialPort:
                     self._MarkPortClosed()
                 except:  
                     raise
+            except OSError:
+                try:
+                    logstring("OSError while writing")
+                    self.had_error = True
+                    self.my_serial.close()
+                    self._MarkPortClosed()
+                except:  
+                    raise
             if result:
                 return result
         else:
-            logstring("not going to write {}".format(data))
+            logstring("Unable to write: {}".format(data))
             #pass
                 
   
@@ -161,6 +169,16 @@ class SerialPort:
                     return ord(data)
             except serial.SerialException:
                 try:
+                    logstring("had Serial Exception")
+                    self.had_error = True
+                    self.my_serial.close()
+                    self._MarkPortClosed()
+                    return None
+                except:  
+                    raise
+            except OSError:
+                try:
+                    logstring("had OSError")
                     self.had_error = True
                     self.my_serial.close()
                     self._MarkPortClosed()

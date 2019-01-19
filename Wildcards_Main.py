@@ -46,11 +46,7 @@ class WildCardsMain:
         self.has_active_server = False
         self.start_server = None
         #initialize the System Tray icon for WildCards Link
-        #self.WildUI = None
         self.WildUI = WildCardsUserInterface(parent=self)
-
-        #set up the server on default port
-        #self.WildServer = WildCardsServer()
 
         #set up the serial link to Firmata        
         self.WildSerial = None
@@ -60,48 +56,33 @@ class WildCardsMain:
         loop.create_task(self.CheckForNewUserInputs())
         
         self.server = WildServer(parent=self, my_firmata=self.WildFirmata)
-        #self.KeepServerAlive()
-        #start_server = websockets.serve(self.server.get_message, '127.0.0.1', 9000)
-        
+
         self._new_serial_port = None
         
         loop.create_task(self.KeepServerAlive())
         loop.create_task(self.WildFirmata.write_continuously())
-        #logstring("server set up...")
-        #loop.run_until_complete(start_server)
-        #logstring("got past the run until complete...")
+
  
     def StartSerial(self):
-        logstring("someone calling startserial")
         self.WildSerial.StartService()
-    
-    
+        
     async def KeepServerAlive(self):
-        #while True:
-            #logstring("has active server = {}".format(self.has_active_server))
-            #if self.has_active_server:
-                #await asyncio.sleep(0.1)
-            #else:
-                #logstring("gothere1")
-                #self.has_active_server = True
-            if self.start_server is None:
-                self.start_server = websockets.serve(self.server.get_message, '127.0.0.1', 9000)
-            #logstring("gothere2")
-            logstring("sserv is {}".format(self.start_server))
-            
-            #asyncio.ensure_future(self.start_server, loop=loop)
+        self.server.portnumber = serverport
+        if self.start_server is None:
+            self.start_server = websockets.serve(self.server.get_message, '127.0.0.1', serverport)
+        try:
             await asyncio.gather(self.start_server, loop=loop)
+            logstring("Server listining on port {}".format(serverport))
+            self.ServerListening(serverport)
+        except:
+            logstring("Error setting up server")
+            pass
             
-            
-            #loop.create_task(self.start_server())
-            #logstring("gothere3")
-            #loop.run_until_complete(start_server)
-            await asyncio.sleep(0.1)
-       
+    def ServerListening(self, portnumber):
+        self.WildUI.UpdateServerPort(portnumber)
+        self.WildUI.UpdateServerStatusGood(True)
+        
     async def CheckForNewUserInputs(self):
-        #last_serial_port = self._new_serial_port
-        #print("1last {}   new  {}".format(last_serial_port, self._new_serial_port))
-        #await asyncio.sleep(0.01, loop=loop)
         while True:
             if self.WildUI.Exiting:
                 if self.Exiting is False:
@@ -112,14 +93,13 @@ class WildCardsMain:
                 await self.WildSerial.OpenNamedSerialPort(self._new_serial_port)
                 self._new_serial_port = None
             await asyncio.sleep(0.1, loop=loop)
-            #print("4last {}   new  {}".format(last_serial_port, self._new_serial_port))
             
     async def SerialOpened(self):
         """ called by Wildcards_serial """
         self.WildUI.UpdateCurrentPort(self.WildSerial.CurrentPort.com_port)
         self.WildUI.UpdateCurrentPortStatusGood(True)
         await self.WildFirmata.assign_serial_port(self.WildSerial)  #this WildSerial will have a CurrentPort object
-        
+
     def SerialClosed(self):
         self.WildUI.UpdateCurrentPort(None)
         self.WildUI.UpdateCurrentPortStatusGood(False)
@@ -200,6 +180,9 @@ if args.com == 'None':
     comport = None
 else:
     comport = args.com
+    
+serverport = args.port
+
     
     
 
