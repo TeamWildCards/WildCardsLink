@@ -15,6 +15,7 @@
  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 """
 
+import sys
 from systray.traybar import SysTrayIcon
 
 def do_nothing(sysTrayIcon, index_number, menu_text):
@@ -42,14 +43,21 @@ class WildCardsUserInterface:
         self.SerialPorts = None
                       
         self._generate_updated_menu()
+        
+        if sys.platform.startswith('darwin'):
+            self.WildsysTrayIcon = None
+        else:
+            self.WildsysTrayIcon = SysTrayIcon("wc_site_icon_filled.ico", self._hover_text, self.menu_options, on_quit=self.bye, default_menu_index=1)
             
-        self.WildsysTrayIcon = SysTrayIcon("wc_site_icon_filled.ico", self._hover_text, self.menu_options, on_quit=self.bye, default_menu_index=1)
         
 
         self.update_menu_options()
         
-        self.WildsysTrayIcon.start()        
-        
+        if sys.platform.startswith('darwin'):
+            pass
+        else:        
+            self.WildsysTrayIcon.start()        
+      
     def UpdateServerPort(self, serverportnum):
         #called by higher level objects
         self.CurrentServerPort = serverportnum
@@ -134,14 +142,18 @@ class WildCardsUserInterface:
                              
     def _update_menu(self, menu_options):
         print("updating menu options")
-        self.WildsysTrayIcon.update(menu_options = menu_options)
+        if sys.platform.startswith('darwin'):
+            pass
+        else:   
+            self.WildsysTrayIcon.update(menu_options = menu_options)
         
     def bye(self, sysTrayIcon):
         #called by "on_quit"
-        
-        #print("saidbye")
         self.Exiting = True
 
     def kill_systray(self):
-        self.WildsysTrayIcon.shutdown()   
+        if sys.platform.startswith('darwin'):
+            pass
+        else:   
+            self.WildsysTrayIcon.shutdown()   
         

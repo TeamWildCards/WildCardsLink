@@ -117,7 +117,7 @@ class WildcardsFirmata(WildcardsFirmataBaseObject):
         logstring('Wildcards Link Version ' + \
                   PrivateConstants.WILDCARDS_VERSION + \
                   ' Copyright (c) 2015-2017 Alan Yorinks All rights reserved.' + \
-                  ' Copyright (c) 2018 Dynamic Phase, LLC. All rights reserved.')
+                  ' Copyright (c) 2018-2019 Dynamic Phase, LLC. All rights reserved.')
 
 
         self.sleep_tune = sleep_tune
@@ -1188,7 +1188,7 @@ class WildcardsFirmata(WildcardsFirmataBaseObject):
         sysex = []
         while True:
             if self._valid_target_exists:
-                #logstring("Command Dispatcher: Valid Target")
+                logstring("Command Dispatcher: Valid Target")
                 try:
                     #logstring("Command Dispatcher: Reading Next Byte")
                     #donothing = self.donothingatall()
