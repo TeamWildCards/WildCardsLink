@@ -1,6 +1,6 @@
 """
  Copyright (c) 2018 Dynamic Phase, LLC All rights reserved.
- 
+
  This program is free software; you can redistribute it and/or
  modify it under the terms of the GNU AFFERO GENERAL PUBLIC LICENSE
  Version 3 as published by the Free Software Foundation; either
@@ -17,7 +17,7 @@
 
 import sys
 
-if sys.platform.startswith('darwin'):
+if sys.platform.startswith('darwin') or sys.platform.startswith('linux') or sys.platform.startswith('linux2'):
     pass
 else:
     from systray.traybar import SysTrayIcon
@@ -45,23 +45,23 @@ class WildCardsUserInterface:
         self.ServerStatus = None
         self.SerialStatus = None
         self.SerialPorts = None
-                      
+
         self._generate_updated_menu()
-        
-        if sys.platform.startswith('darwin'):
+
+        if sys.platform.startswith('darwin') or sys.platform.startswith('linux') or sys.platform.startswith('linux2'):
             self.WildsysTrayIcon = None
         else:
             self.WildsysTrayIcon = SysTrayIcon("wc_site_icon_filled.ico", self._hover_text, self.menu_options, on_quit=self.bye, default_menu_index=1)
-            
-        
+
+
 
         self.update_menu_options()
-        
-        if sys.platform.startswith('darwin'):
+
+        if sys.platform.startswith('darwin') or sys.platform.startswith('linux') or sys.platform.startswith('linux2'):
             pass
-        else:        
-            self.WildsysTrayIcon.start()        
-      
+        else:
+            self.WildsysTrayIcon.start()
+
     def UpdateServerPort(self, serverportnum):
         #called by higher level objects
         self.CurrentServerPort = serverportnum
@@ -73,7 +73,7 @@ class WildCardsUserInterface:
             self.CurrentServerStatus = "GreenLight.ico"
         else:
             self.CurrentServerStatus = "RedLight.ico"
-        self.update_menu_options()       
+        self.update_menu_options()
 
     def UpdateCurrentPort(self, port):
         """
@@ -84,7 +84,7 @@ class WildCardsUserInterface:
         """
         self.CurrentSerialPort = port
         self.update_menu_options()
-        
+
     def UpdateCurrentPortStatusGood(self, status):
         """
         Updates the current port status. Typically called by a parent object.
@@ -98,7 +98,7 @@ class WildCardsUserInterface:
         else:
             self.CurrentSerialPortStatus = "RedLight.ico"
         self.update_menu_options()
-                        
+
     def UpdatePortList(self, portlist):
         self.SerialPorts = None
         for port in portlist:
@@ -117,7 +117,7 @@ class WildCardsUserInterface:
     def update_menu_options(self):
         self._generate_updated_menu()
         self._update_menu(self.menu_options)
-    
+
     def _generate_updated_menu(self):
         if self.CurrentServerPort is not None:
             #may change do nothing to something that pops up an input box for a new server number on localhost??
@@ -125,12 +125,12 @@ class WildCardsUserInterface:
         else:
             self.ServerStatus = ('Server not running', self.CurrentServerStatus, do_nothing)
         #print("{}".format(self.SerialPorts))
-        
+
         if self.SerialPorts is None:
             submenu = do_nothing
         else:
             submenu = tuple(self.SerialPorts)
-            
+
         if self.CurrentSerialPort is not None:
             self.SerialStatus = ('Connected to {}'.format(self.CurrentSerialPort),
                                  self.CurrentSerialPortStatus,
@@ -142,22 +142,21 @@ class WildCardsUserInterface:
 
         self.menu_options = (('WildCards Link', "wc_site_icon_filled.ico", do_nothing),
                              self.ServerStatus,
-                             self.SerialStatus)                
-                             
+                             self.SerialStatus)
+
     def _update_menu(self, menu_options):
-        print("Updating menu options")
-        if sys.platform.startswith('darwin'):
+        print("updating menu options")
+        if sys.platform.startswith('darwin') or sys.platform.startswith('linux') or sys.platform.startswith('linux2'):
             pass
-        else:   
+        else:
             self.WildsysTrayIcon.update(menu_options = menu_options)
-        
+
     def bye(self, sysTrayIcon):
         #called by "on_quit"
         self.Exiting = True
 
     def kill_systray(self):
-        if sys.platform.startswith('darwin'):
+        if sys.platform.startswith('darwin') or sys.platform.startswith('linux') or sys.platform.startswith('linux2'):
             pass
-        else:   
-            self.WildsysTrayIcon.shutdown()   
-        
+        else:
+            self.WildsysTrayIcon.shutdown()

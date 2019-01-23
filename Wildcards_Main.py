@@ -48,24 +48,24 @@ class WildCardsMain:
         #initialize the System Tray icon for WildCards Link
         self.WildUI = WildCardsUserInterface(parent=self)
 
-        #set up the serial link to Firmata        
+        #set up the serial link to Firmata
         self.WildSerial = None
-        self.WildSerial = WildCardsSerial(parent=self) 
+        self.WildSerial = WildCardsSerial(parent=self)
         self.WildFirmata = WildcardsFirmata(parent=self)
 
         loop.create_task(self.CheckForNewUserInputs())
-        
+
         self.server = WildServer(parent=self, my_firmata=self.WildFirmata)
 
         self._new_serial_port = None
-        
+
         loop.create_task(self.KeepServerAlive())
         loop.create_task(self.WildFirmata.write_continuously())
 
- 
+
     def StartSerial(self):
         self.WildSerial.StartService()
-        
+
     async def KeepServerAlive(self):
         self.server.portnumber = serverport
         if self.start_server is None:
@@ -77,11 +77,11 @@ class WildCardsMain:
         except:
             logstring("Error setting up server")
             pass
-            
+
     def ServerListening(self, portnumber):
         self.WildUI.UpdateServerPort(portnumber)
         self.WildUI.UpdateServerStatusGood(True)
-        
+
     async def CheckForNewUserInputs(self):
         while True:
             if self.WildUI.Exiting:
@@ -93,7 +93,7 @@ class WildCardsMain:
                 await self.WildSerial.OpenNamedSerialPort(self._new_serial_port)
                 self._new_serial_port = None
             await asyncio.sleep(0.1, loop=loop)
-            
+
     async def SerialOpened(self):
         """ called by Wildcards_serial """
         self.WildUI.UpdateCurrentPort(self.WildSerial.CurrentPort.com_port)
@@ -104,21 +104,21 @@ class WildCardsMain:
         self.WildUI.UpdateCurrentPort(None)
         self.WildUI.UpdateCurrentPortStatusGood(False)
         self.WildFirmata.remove_serial_port()
-                
+
     def UpdatePortList(self, portlist):
         self.WildUI.UpdatePortList(portlist)
-        
+
     def UpdateCurrentSerialPort(self, port):
         self.WildUI.UpdateCurrentPort(port)
-        
+
     def UpdateCurrentPortStatusGood(self, status):
         self.WildUI.UpdateCurrentPortStatusGood(status)
-        
+
     def SelectUserSpecifiedPort(self, portname):
         """
         This is a called by the user interface.
         This method instructs the serial port to use the specified port name.
-        Once the serial part has established a good connection, it *should* 
+        Once the serial part has established a good connection, it *should*
         eventually result in a call to self.WildUI.UpdateCurrentPort
 
         :param portname:  the name of the port that has been selected by the user
@@ -127,7 +127,7 @@ class WildCardsMain:
         logstring("User selected port is {}".format(portname))
         self._new_serial_port = portname
         #loop.call_soon_threadsafe(self.SelectUserSpecifiedPort_Threadsafe(portname))
-        
+
 
     def ShutdownUI(self):
         #print("ShutdownUI")
@@ -160,7 +160,7 @@ class WildCardsMain:
       --wait WAIT          Arduino wait time
       --comport COM        Arduino COM port
       --sleep SLEEP        sleep tune in ms.
-      -v --verbose VERBOSE send output to file      
+      -v --verbose VERBOSE send output to file
       -l --logging LOG     send output to console
 """
 
@@ -179,15 +179,15 @@ if args.com == 'None':
     comport = None
 else:
     comport = args.com
-    
+
 serverport = args.port
 
-    
-    
+
+
 
 #global_log_output = args.logging
-#global_verbose = args.verbose    
-#global_verbose = True            
+#global_verbose = args.verbose
+#global_verbose = True
 #global_log_output = True
 
 #last_logstring = ""
@@ -212,11 +212,11 @@ def _signal_handler(sig, frame):
     except:
         pass
     try:
-        sys.exit()       
+        sys.exit()
     except SystemExit:
         pass
     logstring('\nFinished Cleaning Up, Bye!')
-    
+
 
 signal.signal(signal.SIGINT, _signal_handler)
 signal.signal(signal.SIGTERM, _signal_handler)
@@ -225,7 +225,7 @@ loop = asyncio.get_event_loop()
 
 '''
 logging.getLogger('asyncio').setLevel(logging.WARNING)
-logging.basicConfig(level=logging.DEBUG) 
+logging.basicConfig(level=logging.DEBUG)
 
 
 fh = logging.FileHandler('spam.log')
@@ -246,7 +246,7 @@ try:
     #loop.create_task(MainObject.statusprinter())
     #loop.create_task(MainObject.SystrayExitChecker())
     loop.run_forever()
-    
+
     MainObject.ShutdownUI()
     sys.exit()
     #logstring("neverseethis")
@@ -258,4 +258,3 @@ except RuntimeError:
     logstring('Runtime Error')
     MainObject.ShutdownUI()  
     sys.exit()
-	
