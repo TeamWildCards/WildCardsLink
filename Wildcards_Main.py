@@ -27,7 +27,7 @@ import websockets
 import time
 import logging
 
-from easygui import *
+#from easygui import *
 #from pymata_aio.constants import Constants
 #from pymata_aio.pymata_core import PymataCore
 from serial import SerialException
@@ -124,9 +124,8 @@ class WildCardsMain:
         :param portname:  the name of the port that has been selected by the user
         :returns: No return value.
         """
-        logstring("selecting main port now: {}".format(portname))
+        logstring("User selected port is {}".format(portname))
         self._new_serial_port = portname
-        logstring("selected main port now: {}".format(portname))
         #loop.call_soon_threadsafe(self.SelectUserSpecifiedPort_Threadsafe(portname))
         
 
@@ -140,7 +139,7 @@ class WildCardsMain:
         # while True:
             # #print("Are we exiting ?  {}".format(self.WildUI.Exiting))
             # await asyncio.sleep(0.1)
-            
+
     async def SystrayExitChecker(self):
         #print("SystrayExitChecker")
         while True:
@@ -242,7 +241,7 @@ try:
     MainObject = WildCardsMain()
     #loop.create_task(MainObject.statusprinter())
     loop.create_task(MainObject.SystrayExitChecker())
-    logstring("I'm the one calling startserial")
+    #logstring("I'm the one calling startserial")
     #MainObject.StartSerial()
     #loop.create_task(MainObject.statusprinter())
     #loop.create_task(MainObject.SystrayExitChecker())
@@ -250,13 +249,13 @@ try:
     
     MainObject.ShutdownUI()
     sys.exit()
-    logstring("neverseethis")
+    #logstring("neverseethis")
 except serial.serialutil.SerialException:
-    logstring('problem closing the loop')
+    logstring('Problem closing the loop!')
     MainObject.ShutdownUI()  
     sys.exit()
 except RuntimeError:
-    logstring('got here1')
+    logstring('Runtime Error')
     MainObject.ShutdownUI()  
     sys.exit()
 	

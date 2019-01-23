@@ -18,7 +18,8 @@
 import logging
 
 global_log_output = True
-global_verbose = True
+#global_verbose = True
+global_verbose = False
 last_logstring = ""
 
 
@@ -26,9 +27,6 @@ def logstring(mystring, optional=None):
     global last_logstring
     global global_log_output
     global global_verbose
-    if last_logstring == mystring and last_logstring == "com14 is indicated as Open":
-        print("locations = {}".format(optional.locations))
-        #raise Exception
     last_logstring = mystring
     if global_log_output:
         logging.info(mystring)
@@ -42,7 +40,7 @@ def setup_global_log_output(truetolog, verbose):
     last_logstring = ""
     global_log_ouptut = truetolog
     global_verbose = verbose
-    print("sawthis...{}".format(last_logstring))
+    #print("sawthis...{}".format(last_logstring))
     logging.basicConfig(filename='./Wildcards.log', filemode='w',
         level=logging.DEBUG)
         

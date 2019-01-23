@@ -90,7 +90,7 @@ class WildServer:
         try:
             while True:
                 payload = await self.websocket.recv()
-                logstring("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!recieved a payload {}".format(payload))
+                logstring("Recieved payload: {}".format(payload))
                 # cmd_dict = json.loads(payload.decode('utf8'))
                 cmd_dict = json.loads(payload)
                 client_cmd = cmd_dict.get("method")
@@ -103,7 +103,7 @@ class WildServer:
                     else:
                         await cmd()
         except websockets.exceptions.ConnectionClosed:
-            logstring('One of the websocket connections has closed')
+            logstring('A websocket connections has closed')
 
 
     async def analog_read(self, command):
@@ -158,7 +158,6 @@ class WildServer:
         """
         pin = int(command[0])
         value = int(command[1])
-        logstring("writing pin {} value {}".format(pin, value))
         self.core.digital_write(pin, value)
         
     async def digital_write(self, command):
@@ -168,11 +167,9 @@ class WildServer:
         :param command: {"method": "digital_write", "params": [PIN, DIGITAL_DATA_VALUE]}
         :returns: No return message..
         """
-        logstring("doing digital write")
         pin = int(command[0])
         value = int(command[1])
         self.core.digital_write(pin, value)
-        logstring("done digital write")
         
     async def disable_analog_reporting(self, command):
         """

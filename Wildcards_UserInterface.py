@@ -109,8 +109,8 @@ class WildCardsUserInterface:
 
     def SelectNewPort(self, systray, index_number, menu_text):
         #called by the systray menu
-        print("select port {}".format(menu_text))
-        print(menu_text)
+        #print("select port {}".format(menu_text))
+        #print(menu_text)
         self._parent.SelectUserSpecifiedPort(menu_text)
         #select port option_text
 
@@ -145,7 +145,7 @@ class WildCardsUserInterface:
                              self.SerialStatus)                
                              
     def _update_menu(self, menu_options):
-        print("updating menu options")
+        print("Updating menu options")
         if sys.platform.startswith('darwin'):
             pass
         else:   

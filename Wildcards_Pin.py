@@ -85,34 +85,24 @@ class Pin(WildcardsFirmataBaseObject):
             
     def SetPinMode(self, mode):  #when sending pin numbers to set mode,
                                  #only digital pin numbering scheme is used
-        logstring("setting mode to {} {} {}".format(mode, self._HasAnalog, self._HasOutput))
+        #logstring("setting mode to {} {} {}".format(mode, self._HasAnalog, self._HasOutput))
         if self._HasAnalog:
-            logstring("spm 1")
             if mode == Constants.ANALOG: 
-                logstring("spm 1.5")
-                self._report_analog = 1  #always send through analog reporting messages as they incite an immediate response
-                
+                self._report_analog = 1  #always send through analog reporting messages as they incite an immediate response         
             else:
-                logstring("spm 2")
                 self._report_analog = 0  #don't bother sending "turn off analog reports" as second time
         
         self._value = 0    
         #debug in here
-        logstring("spm 3")
         if mode == Constants.ANALOG:
-            logstring("spm 4")
             if self._HasAnalog:
-                logstring("spm 5")
                 if self._HasOutput or self._HasPullup or self._HasInput:
-                    logstring("spm 6")
-                    self._value
-                logstring("spm 7")                    
+                    self._value                
                 self._mode = Constants.ANALOG
                 self._need_to_write_mode = True #always resend the analog reporting message
                 self._need_to_config_servo = False 
                 self._need_to_send_analog_reporting = False #no need because it is already going to handle during mode change  
                 self._need_to_perform_analog_write = False
-                logstring("spm 8")
         elif mode == Constants.INPUT:
             if self._HasInput:
                 self._mode = Constants.INPUT
@@ -186,7 +176,7 @@ class Pin(WildcardsFirmataBaseObject):
         else:
             pass #no encoder? interesting....
             #unknown pin mode, do nothing
-        logstring("mode is now {} for pin num {}".format(self._mode, self._PinNum))
+        logstring("Pin {} set to mode {}".format(self._PinNum, self._mode))
     
     def enable_digital_reporting(self):
         self._DigitalReportingEnabled = True
@@ -224,23 +214,20 @@ class Pin(WildcardsFirmataBaseObject):
         #This allows for the distinction between Set Digital Pin Value (0xF5) behavior and
         #Digital Write (0x90) in Firmata protocol
         if self._HasOutput or (self._HasInput and self._HasPullup):
-            logstring("ok1 mode is {} for pin number {}".format(self._mode, self._PinNum))
+            #logstring("ok1 mode is {} for pin number {}".format(self._mode, self._PinNum))
             if self._mode == Constants.OUTPUT or (self._mode == Constants.INPUT and PermitWriteToInputPin):
-                logstring("ok2")
                 self._value = value
-                logstring("ok3")
                 if (self._value != 0 and self._last_sent_value == 0) or \
                    (self._value == 0 and self._last_sent_value != 0):
 
                     #no need to re-send if we're just changing the positive value used
                     #but do re-send if we're going 0 to non zero (or vice versa)
-                    logstring("going to perform a digital write")
+                    logstring("Performing Digital Write")
                     self._need_to_perform_digital_write = True
                 else:
-                    logstring("no need to perform a digital write")
+                    logstring("No need to perform Digital Write")
                     self._need_to_perform_digital_write = False
-            logstring("ok4")
-        logstring("ok5")  
+
         
     def ConfigServo(self, min_pulse, max_pulse):
         self._servo_min_pulse = min_pulse

@@ -115,9 +115,9 @@ class WildcardsFirmata(WildcardsFirmataBaseObject):
 
 
         logstring('Wildcards Link Version ' + \
-                  PrivateConstants.WILDCARDS_VERSION + \
-                  ' Copyright (c) 2015-2017 Alan Yorinks All rights reserved.' + \
-                  ' Copyright (c) 2018-2019 Dynamic Phase, LLC. All rights reserved.')
+                  PrivateConstants.WILDCARDS_VERSION)
+        logstring(' Copyright (c) 2015-2017 Alan Yorinks All rights reserved.')
+        logstring(' Copyright (c) 2018-2019 Dynamic Phase, LLC. All rights reserved.')
 
 
         self.sleep_tune = sleep_tune
@@ -249,7 +249,7 @@ class WildcardsFirmata(WildcardsFirmataBaseObject):
         Future: possibly attempt to load firmata?
         :returns: No return value.
          """
-        logstring("you are now in assign_serial_port")
+        #logstring("you are now in assign_serial_port")
         if serial_manager is None:
             return
             
@@ -278,9 +278,9 @@ class WildcardsFirmata(WildcardsFirmataBaseObject):
         self._ports_directly = []
         
         # wait for arduino to go through a reset cycle if need be
-        logstring("waiting for 2 seconds")
+        logstring("Waiting for 2 seconds...")
         time.sleep(self.arduino_wait)
-        logstring("time is up!")
+        #logstring("time is up!")
         #await asyncio.sleep(self.arduino_wait)
 
         # register the get_command method with the event loop
@@ -306,14 +306,14 @@ class WildcardsFirmata(WildcardsFirmataBaseObject):
                 self.disconnect_port_due_to_error()
                 return
         logstring("\nFirmware ID: " + firmware_version)
-        logstring("relevant port {}".format(self.serial_port_name))
+        logstring("On port {}".format(self.serial_port_name))
         # get an analog pin map
 
         # try to get an analog report. if it comes back as none - shutdown
         # report = await self.get_analog_map()
-        logstring("getting analog map")
+        logstring("Fetching analog mapping")
         analogreport = await self.get_analog_map()
-        logstring("got analog map")
+        #logstring("got analog map")
         if not analogreport:
             logerr('*** Analog map retrieval timed out. ***')
             logerr('Analog Pin Mapping not found')
@@ -419,7 +419,7 @@ class WildcardsFirmata(WildcardsFirmataBaseObject):
                                        PWMResolution=PWMResolution, HasI2C=HasI2C)
             current_port.pins.append(newpin)
             self._digital_pins_directly.append(newpin)
-            logstring("appending a new pin {}   len {}".format(newpin._ID, len(self._digital_pins_directly)))
+            logstring("Appending a new pin {}   len {}".format(newpin._ID, len(self._digital_pins_directly)))
             if HasAnalog:
                 self._analog_pins_directly.append(newpin)
                 
@@ -494,9 +494,9 @@ class WildcardsFirmata(WildcardsFirmataBaseObject):
         :param value: pin value
         :returns: No return value
         """
-        logstring("going for pin {} and value {} while pincount is {}".format(pin, value, len(self._digital_pins_directly)))
+        #logstring("going for pin {} and value {} while pincount is {}".format(pin, value, len(self._digital_pins_directly)))
         self._digital_pins_directly[pin].DigitalWrite(value)
-        logstring("finished digital write")
+        #logstring("finished digital write")
 
     def digital_port_write(self, port, value):
         """
@@ -633,7 +633,7 @@ class WildcardsFirmata(WildcardsFirmataBaseObject):
         # message to request one
         if self.query_reply_data.get(
                 PrivateConstants.ANALOG_MAPPING_RESPONSE) is None:
-            logstring("doing analog mapping request")
+            logstring("Requesting analog mapping")
             await self._send_sysex(PrivateConstants.ANALOG_MAPPING_QUERY, None)
             # wait for the report results to return for 2 seconds
             # if the timer expires, leave empty handed
@@ -993,16 +993,16 @@ class WildcardsFirmata(WildcardsFirmataBaseObject):
                 self.digital_pins[pin_number].cb = callback
             elif pin_state == Constants.ANALOG:
                 self.analog_pins[pin_number].cb = callback
-            else:
-                logstring('set_pin_mode: callback ignored for pin '
-                          'state: {}'.format(pin_state))
+            #else:
+            #    logstring('set_pin_mode: callback ignored for pin '
+            #              'state: {}'.format(pin_state))
 
         pin_mode = pin_state
         self._digital_pins_directly[pin_number].SetPinMode(pin_mode)
         if pin_state == Constants.ANALOG:
             self._digital_pins_directly[pin_number].enable_analog_reporting()
         elif pin_state == Constants.INPUT:
-            logstring("setting digital pin directly as INPUT")
+            logstring("Setting digital pin directly as INPUT")
             self._digital_pins_directly[pin_number].enable_digital_reporting()
         else:
             pass
@@ -1184,11 +1184,11 @@ class WildcardsFirmata(WildcardsFirmataBaseObject):
         """
         # sysex commands are assembled into this list for processing
         #checkingport = self.serial_port.com_port
-        logstring("!!!!!!!!!!!!!!!!!!!!!!!!!!Found Command Dispatcher")
+        logstring("Starting Command Dispatcher")
         sysex = []
         while True:
             if self._valid_target_exists:
-                logstring("Command Dispatcher: Valid Target")
+                #logstring("Command Dispatcher: Valid Target")
                 try:
                     #logstring("Command Dispatcher: Reading Next Byte")
                     #donothing = self.donothingatall()
@@ -1235,7 +1235,7 @@ class WildcardsFirmata(WildcardsFirmataBaseObject):
                         # we need to yield back to the loop
                         await asyncio.sleep(self.sleep_tune)
                         continue
-                    logstring("finished this read cycle")                        
+                    #logstring("finished this read cycle")                        
                 except ConnectionAbortedError as ex:
                     logstring(ex)
                     #print("An exception occurred on the asyncio event loop while receiving data.  Invalid message.")
@@ -1310,10 +1310,10 @@ class WildcardsFirmata(WildcardsFirmataBaseObject):
             port_data = (data[PrivateConstants.MSB] << 7) + \
                         data[PrivateConstants.LSB]
             port_starting_pin = port * 8
-            logstring("digital message received: {} {}  {}".format(port, port_data, port_starting_pin))
+            logstring("Digital message received: {} {}  {}".format(port, port_data, port_starting_pin))
             for pin in range(port_starting_pin, min(port_starting_pin + 8, len(self.digital_pins))):
                 # get pin value
-                logstring("doing pin {}".format(pin))
+                #logstring("doing pin {}".format(pin))
                 value = port_data & 0x01
 
                 # set the current value in the pin structure
@@ -1321,7 +1321,7 @@ class WildcardsFirmata(WildcardsFirmataBaseObject):
                 # append pin number, pin value, and pin type to return value and return as a list
                 message = [pin, value, Constants.INPUT]
 
-                logstring("2a doing pin {}".format(self.digital_pins[pin].cb))
+                #logstring("2a doing pin {}".format(self.digital_pins[pin].cb))
                 if self.digital_pins[pin].cb:
                     if inspect.iscoroutinefunction(self.digital_pins[pin].cb):
                         await self.digital_pins[pin].cb(message)
@@ -1334,7 +1334,7 @@ class WildcardsFirmata(WildcardsFirmataBaseObject):
                     if key in self.latch_map:
                         await self._check_latch_data(key, port_data & 0x01)       
                 port_data >>= 1
-            logstring("finished digital message function")
+            #logstring("finished digital message function")
         except Exception as inst:
                 print(inst)
                 raise
@@ -1708,7 +1708,7 @@ class WildcardsFirmata(WildcardsFirmataBaseObject):
                 try:
                     result = self.write(data)
                 except():
-                    logerr('cannot send command')
+                    logerr('Cannot send command')
         return result
 
     async def _send_sysex(self, sysex_command, sysex_data=None):
@@ -1722,7 +1722,7 @@ class WildcardsFirmata(WildcardsFirmataBaseObject):
         """
         if not sysex_data:
             sysex_data = []
-        logstring("sending {}".format(sysex_command))
+        #logstring("sending {}".format(sysex_command))
         # convert the message command and data to characters
         sysex_message = chr(PrivateConstants.START_SYSEX)
         sysex_message += chr(sysex_command)
@@ -1734,7 +1734,7 @@ class WildcardsFirmata(WildcardsFirmataBaseObject):
             if self.serial_port is not None:
                 #print("serial port is {}".format(self.serial_port))
                  #someday make write awaitable
-                logstring("{}".format(data))
+                #logstring("{}".format(data))
                 self.write(data)
         #await asyncio.sleep(0.1)
         

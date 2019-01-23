@@ -69,13 +69,13 @@ class SerialPort:
 
     async def _MarkPortOpen(self):
         if self._IsPortOpen == False:
-            logstring("Marking _IsPortOpen for port {}".format(self.com_port))
+            logstring("Marking port {} as open".format(self.com_port))
             self._IsPortOpen = True
             await self._parent.PortOpened()
 
     def _MarkPortClosed(self):
         if self._IsPortOpen == True:
-            logstring("Marking _IsPortOpen as FALSE for port {}".format(self.com_port))    
+            logstring("Marking port {} as closed".format(self.com_port))    
             self._IsPortOpen = False
             self._parent.PortClosed(self.com_port)
             
@@ -86,9 +86,9 @@ class SerialPort:
         lastknownstatus = self.IsPortAvailable
         while True:
             if lastknownstatus != self.IsPortAvailable:
-                logstring("port availability changed!!!!!!!!!")
+                logstring("Port availability changed!")
                 if self.IsPortAvailable:
-                    logstring("reverting had_error back to false")
+                    logstring("Clearing previous port errors for {}".format(self.com_port))
                     self.had_error = False #no known errors so far
                     self._parent.AppendToPortList(self.com_port)
                 else:
@@ -114,7 +114,7 @@ class SerialPort:
                     result = self.my_serial.write(bytes([ord(d)]))
                 #result = self.my_serial.write(data.encode('utf-8'))
                 #print('Wrote {} on {}!'.format(ord(data),self.com_port))
-                    logstring('Wrote {} on {}!'.format(bytes([ord(d)]),self.com_port))
+                    logstring('Wrote {} on {}'.format(bytes([ord(d)]),self.com_port))
                 #logstring('Wrote {} on {}!'.format(data.encode('utf-8'),self.com_port))
             except serial.SerialTimeoutException:
                 try:
@@ -169,7 +169,7 @@ class SerialPort:
                     return ord(data)
             except serial.SerialException:
                 try:
-                    logstring("had Serial Exception")
+                    logstring("Serial Exception occured")
                     self.had_error = True
                     self.my_serial.close()
                     self._MarkPortClosed()
@@ -178,7 +178,7 @@ class SerialPort:
                     raise
             except OSError:
                 try:
-                    logstring("had OSError")
+                    logstring("OSError occurred")
                     self.had_error = True
                     self.my_serial.close()
                     self._MarkPortClosed()
@@ -203,13 +203,13 @@ class SerialPort:
         """
         Open the serial port
         """
-        logstring("Yay, we're in the CurrentPort, about to open it  {}     {}".format(self._SerialPortChecker.IsPortAvailable, self._IsPortOpen))
+        #logstring("Yay, we're in the CurrentPort, about to open it  {}     {}".format(self._SerialPortChecker.IsPortAvailable, self._IsPortOpen))
         
         if self.IsPortAvailable and (self._IsPortOpen == False):
-            logstring("iT IS AVAILable and not already open")
+            #logstring("iT IS AVAILable and not already open")
             self.my_serial = serial.Serial(self.com_port, self.speed, timeout=1, writeTimeout=1)
             #self.my_serial.open()
-            logstring("Opening up port {} and clearing input output buffers".format(self.com_port))
+            logstring("Opening up port {} and clearing input/output buffers".format(self.com_port))
             
             self.my_serial.reset_output_buffer()
             self.my_serial.reset_input_buffer()
