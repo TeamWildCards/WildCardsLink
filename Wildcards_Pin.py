@@ -123,6 +123,8 @@ class Pin(WildcardsFirmataBaseObject):
                 self._mode = Constants.OUTPUT
                 if self._mode != self._last_sent_mode:
                     self._need_to_write_mode = True
+                    self._value = 0 #firmata sets the value to zero upon setting pin mode to output
+                    self._last_sent_value = 0
                 self._need_to_config_servo = False   
                 self._need_to_perform_analog_write = False
         elif mode == Constants.PWM:
