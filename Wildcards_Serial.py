@@ -156,13 +156,16 @@ class WildCardsSerial:
         # If the port isn't available, or has failed due to an error, there is nothing we can do to open it        
     
     async def NextAvailablePort(self): #returns the name of the next available port
+        HasLogstringChanged = True
         while True:
             if self.CurrentPort is None:
                 if self.Ports is not None:
                     for x in self.Ports:
                         if x.IsPortAvailable and x.had_error == False:
+                            HasLogstringChanged = True
                             return x
             else:
+                
                 FoundCurrentPort = False
                 #loop through all valid ports after the currently-selected one
                 for x in self.Ports:
@@ -171,12 +174,15 @@ class WildCardsSerial:
                     else:
                         if FoundCurrentPort:
                             if x.IsPortAvailable and x.had_error == False:
+                                HasLogstringChanged = True
                                 return x
                 #loop through all ports, skipping only the one we are currently on. 
                 for x in self.Ports:
                     if x.IsPortAvailable and x.had_error == False:
                             return x    
-            logstring("No available ports; waiting")
+            if HasLogstringChanged:
+                logstring("No available ports; waiting")
+            HasLogstringChanged = False
             
             await asyncio.sleep(0.5)  #keep waiting for an available, non-erroneous port to show up        
         
@@ -206,17 +212,22 @@ class WildCardsSerial:
     async def KeepTryingToOpenSerialPorts(self):
         #loop through available ports, trying them out
         #only try the ones that don't have a error history
+        HasLogstringChanged = True
         while True:
             if (self.CurrentPort is not None):
                 if self.CurrentPort.IsPortOpen == True: #we already have an open port, nothing to do
-                    logstring("Port {} is Open".format(self.CurrentPort.com_port), self)
+                    if HasLogstringChanged:
+                        logstring("Port {} is Open".format(self.CurrentPort.com_port), self)
+                    HasLogstringChanged = False
                     await asyncio.sleep(1)
                 else:
+                    HasLogstringChanged = True
                     logstring("Port {} is NOT Open".format(self.CurrentPort.com_port, self.CurrentPort.IsPortOpen))
                     myport = await self.NextAvailablePort()
                     logstring("Next Available Port is {}".format(myport.com_port))
                     await self.OpenNamedSerialPort(myport.com_port, clear_port_error_status = False)  
             else: #the current port was None
+                HasLogstringChanged = True
                 myport = await self.NextAvailablePort()
                 logstring("Next Available Port is {}".format(myport.com_port))
                 await self.OpenNamedSerialPort(myport.com_port, clear_port_error_status = False)

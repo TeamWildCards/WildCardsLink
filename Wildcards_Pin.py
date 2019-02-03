@@ -317,7 +317,7 @@ class Pin(WildcardsFirmataBaseObject):
             self._need_to_perform_analog_write = False
         if self._need_to_query_pin_state == True:  
             output += WrapSysEx(chr(PrivateConstants.PIN_STATE_QUERY) + \
-                                self._PinNum)
+                                To7BitBytes(self._PinNum))
             self._need_to_query_pin_state = False 
         self._last_sent_value = self._value
         return output

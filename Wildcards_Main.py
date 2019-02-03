@@ -21,6 +21,7 @@ import asyncio
 import datetime
 import json
 import sys
+import os
 import signal
 import argparse
 import websockets
@@ -39,6 +40,12 @@ from Wildcards_Server import WildServer
 #import Wildcards_Logger
 from Wildcards_Logger import *
 
+
+def resource_path(relative_path):
+    if hasattr(sys, '_MEIPASS'):
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(os.path.abspath("."), relative_path)
+     
 class WildCardsMain:
     def __init__(self):
 
@@ -62,6 +69,7 @@ class WildCardsMain:
         loop.create_task(self.KeepServerAlive())
         loop.create_task(self.WildFirmata.write_continuously())
 
+        logstring("Resource Path is {}".format(resource_path("")))
 
     def StartSerial(self):
         self.WildSerial.StartService()

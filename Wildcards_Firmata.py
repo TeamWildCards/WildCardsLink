@@ -473,6 +473,7 @@ class WildcardsFirmata(WildcardsFirmataBaseObject):
         :param pin: Digital pin number
         :returns: Last value reported for the digital pin
         """
+        self._digital_pins_directly[pin].PinStateQuery()
         return self.digital_pins[pin].current_value
 
     def digital_pin_write(self, pin, value):

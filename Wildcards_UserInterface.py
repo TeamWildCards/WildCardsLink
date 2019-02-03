@@ -16,6 +16,7 @@
 """
 
 import sys
+import os
 
 if sys.platform.startswith('darwin') or sys.platform.startswith('linux') or sys.platform.startswith('linux2'):
     pass
@@ -25,6 +26,11 @@ else:
 def do_nothing(sysTrayIcon, index_number, menu_text):
     pass
 
+def resource_path(relative_path):
+    if hasattr(sys, '_MEIPASS'):
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(os.path.abspath("."), relative_path)
+     
 
 #todo:
 #Support other operating systems other than windows
@@ -36,11 +42,14 @@ class WildCardsUserInterface:
     def __init__(self, parent=None, serverport=None, serialport=None):
         self._parent = parent
         self.Exiting = False
+        self._GreenLightIconPath = resource_path("GreenLight.ico")
+        self._RedLightIconPath = resource_path("RedLight.ico")
+        self._WildcardsIconPath = resource_path("wc_site_icon_filled.ico")
         self._hover_text = "WildCards Link"
         self.CurrentServerPort = serverport
-        self.CurrentServerStatus = "RedLight.ico"
+        self.CurrentServerStatus = self._RedLightIconPath
         self.CurrentSerialPort = serialport
-        self.CurrentSerialPortStatus = "RedLight.ico"
+        self.CurrentSerialPortStatus = self._RedLightIconPath
 
         self.ServerStatus = None
         self.SerialStatus = None
@@ -51,7 +60,7 @@ class WildCardsUserInterface:
         if sys.platform.startswith('darwin') or sys.platform.startswith('linux') or sys.platform.startswith('linux2'):
             self.WildsysTrayIcon = None
         else:
-            self.WildsysTrayIcon = SysTrayIcon("wc_site_icon_filled.ico", self._hover_text, self.menu_options, on_quit=self.bye, default_menu_index=1)
+            self.WildsysTrayIcon = SysTrayIcon(self._WildcardsIconPath, self._hover_text, self.menu_options, on_quit=self.bye, default_menu_index=1)
 
 
 
@@ -70,9 +79,9 @@ class WildCardsUserInterface:
     def UpdateServerStatusGood(self, status):
         #called by higher level objects
         if status:
-            self.CurrentServerStatus = "GreenLight.ico"
+            self.CurrentServerStatus = self._GreenLightIconPath
         else:
-            self.CurrentServerStatus = "RedLight.ico"
+            self.CurrentServerStatus = self._RedLightIconPath
         self.update_menu_options()
 
     def UpdateCurrentPort(self, port):
@@ -94,9 +103,9 @@ class WildCardsUserInterface:
         :returns: No return value.
         """
         if status:
-            self.CurrentSerialPortStatus = "GreenLight.ico"
+            self.CurrentSerialPortStatus = self._GreenLightIconPath
         else:
-            self.CurrentSerialPortStatus = "RedLight.ico"
+            self.CurrentSerialPortStatus = self._RedLightIconPath
         self.update_menu_options()
 
     def UpdatePortList(self, portlist):
@@ -140,7 +149,7 @@ class WildCardsUserInterface:
                                  self.CurrentSerialPortStatus,
                                  submenu)
 
-        self.menu_options = (('WildCards Link', "wc_site_icon_filled.ico", do_nothing),
+        self.menu_options = (('WildCards Link', self._WildcardsIconPath, do_nothing),
                              self.ServerStatus,
                              self.SerialStatus)
 

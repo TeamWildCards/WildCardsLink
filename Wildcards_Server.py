@@ -145,7 +145,7 @@ class WildServer:
         :returns: {"method": "digital_read_reply", "params": [PIN, DIGITAL_DATA_VALUE]}
         """
         pin = int(command[0])
-        data_val = await self.core.digital_read(pin)
+        data_val = self.core.digital_read(pin)
         reply = json.dumps({"method": "digital_read_reply", "params": [pin, data_val]})
         await self.websocket.send(reply)
 
