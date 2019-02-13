@@ -28,9 +28,6 @@ import websockets
 import time
 import logging
 
-#from easygui import *
-#from pymata_aio.constants import Constants
-#from pymata_aio.pymata_core import PymataCore
 from serial import SerialException
 import serial
 from Wildcards_UserInterface import WildCardsUserInterface
@@ -45,7 +42,7 @@ def resource_path(relative_path):
     if hasattr(sys, '_MEIPASS'):
         return os.path.join(sys._MEIPASS, relative_path)
     return os.path.join(os.path.abspath("."), relative_path)
-     
+
 class WildCardsMain:
     def __init__(self):
 
@@ -260,9 +257,9 @@ try:
     #logstring("neverseethis")
 except serial.serialutil.SerialException:
     logstring('Problem closing the loop!')
-    MainObject.ShutdownUI()  
+    MainObject.ShutdownUI()
     sys.exit()
 except RuntimeError:
     logstring('Runtime Error')
-    MainObject.ShutdownUI()  
+    MainObject.ShutdownUI()
     sys.exit()

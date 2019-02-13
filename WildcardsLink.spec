@@ -2,9 +2,12 @@
 
 block_cipher = None
 
+import os
+
+spec_root = os.path.abspath(SPECPATH)
 
 a = Analysis(['Wildcards_Main.py'],
-             pathex=['D:\\Users\\david\\Downloads\\Wildcardslink'],
+             pathex=[spec_root],
              binaries=[],
              datas=[('*.ico', '.')],
              hiddenimports=['pkg_resources'],

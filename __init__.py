@@ -1,5 +1,7 @@
 """
  Copyright (c) 2015-2017 Alan Yorinks All rights reserved.
+ Copyright (c) 2015-2019 Dynamic Phase, LLC All rights reserved.
+
 
  This program is free software; you can redistribute it and/or
  modify it under the terms of the GNU AFFERO GENERAL PUBLIC LICENSE
@@ -14,5 +16,5 @@
  along with this library; if not, write to the Free Software
  Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
-The pymata_aio package that implements a Python asyncio Arduino StandardFirmata client.
+The WildcardsLink package that implements a Python asyncio Arduino StandardFirmata client.
 """

@@ -2,7 +2,7 @@
 """
  Copyright (c) 2015-2017 Alan Yorinks All rights reserved.
  Copyright (c) 2018 Dynamic Phase, LLC All rights reserved.
- 
+
  This program is free software; you can redistribute it and/or
  modify it under the terms of the GNU AFFERO GENERAL PUBLIC LICENSE
  Version 3 as published by the Free Software Foundation; either
@@ -24,8 +24,7 @@ import sys
 import signal
 import argparse
 import websockets
-from pymata_aio.constants import Constants
-#from pymata_aio.pymata_core import PymataCore
+from constants import Constants
 from serial import SerialException
 import serial
 
@@ -34,7 +33,7 @@ from Wildcards_Logger import *
 class WildServer:
     def __init__(self, parent, my_firmata):
         self.core = my_firmata
-        
+
         self._parent = parent
 
         self.command_map = {
@@ -85,7 +84,7 @@ class WildServer:
         :param path: path
         :return:
         """
-         
+
         self.websocket = websocket
         try:
             while True:
@@ -149,7 +148,7 @@ class WildServer:
         reply = json.dumps({"method": "digital_read_reply", "params": [pin, data_val]})
         await self.websocket.send(reply)
 
-    async def digital_pin_write(self, command):      
+    async def digital_pin_write(self, command):
         """
         This method writes a zero or one to a digital pin.
 
@@ -159,7 +158,7 @@ class WildServer:
         pin = int(command[0])
         value = int(command[1])
         self.core.digital_write(pin, value)
-        
+
     async def digital_write(self, command):
         """
         This method writes a zero or one to a digital pin.
@@ -170,7 +169,7 @@ class WildServer:
         pin = int(command[0])
         value = int(command[1])
         self.core.digital_write(pin, value)
-        
+
     async def disable_analog_reporting(self, command):
         """
         Disable Firmata reporting for an analog pin.
@@ -355,11 +354,11 @@ class WildServer:
 
     async def get_wildcards_version(self):
         """
-         This method retrieves the PyMata release version number.
+         This method retrieves the Wildcards release version number.
 
          JSON command: {"method": "get_wildcards_version", "params": ["null"]}
 
-         :returns:  {"method": "wildcards_version_reply", "params":[PYMATA_VERSION]}
+         :returns:  {"method": "wildcards_version_reply", "params":[WILDCARDS_VERSION]}
         """
         value = await self.core.get_wildcards_version()
         if value:
@@ -511,7 +510,7 @@ class WildServer:
             cb = None
 
         await self.core.set_pin_mode(pin, mode, cb)
-        
+
     async def set_sampling_interval(self, command):
         """
         This method sets the Firmata sampling interval in ms.
@@ -587,7 +586,7 @@ class WildServer:
 
     def analog_callback(self, data):
         """
-        This method handles the analog message received from pymata_core
+        This method handles the analog message received from Wildcards Firmata
         :param data: analog callback message
         :returns:{"method": "analog_message_reply", "params": [PIN, DATA_VALUE}
         """
@@ -596,7 +595,7 @@ class WildServer:
 
     def analog_latch_callback(self, data):
         """
-        This method handles analog_latch data received from pymata_core
+        This method handles analog_latch data received from Wildcards Firmata
         :param data: analog latch callback message
         :returns:{"method": "analog_latch_data_reply", "params": [ANALOG_PIN, VALUE_AT_TRIGGER, TIME_STAMP_STRING]}
         """
@@ -607,7 +606,7 @@ class WildServer:
 
     def digital_callback(self, data):
         """
-        This method handles the digital message received from pymata_core
+        This method handles the digital message received from Wildcards Firmata
         :param data: digital callback message
         :returns:{"method": "digital_message_reply", "params": [PIN, DATA_VALUE]}
         """
@@ -617,7 +616,7 @@ class WildServer:
 
     def digital_latch_callback(self, data):
         """
-        This method handles the digital latch data message received from pymata_core
+        This method handles the digital latch data message received from Wildcards Firmata
         :param data: digital latch callback message
         :returns:s{"method": "digital_latch_data_reply", "params": [PIN, DATA_VALUE_AT_TRIGGER, TIME_STAMP_STRING]}
         """
@@ -628,7 +627,7 @@ class WildServer:
 
     def encoder_callback(self, data):
         """
-        This method handles the encoder data message received from pymata_core
+        This method handles the encoder data message received from Wildcards Firmata
         :param data: encoder data callback message
         :returns:{"method": "encoder_data_reply", "params": [ENCODER VALUE]}
         """
@@ -637,7 +636,7 @@ class WildServer:
 
     def i2c_read_request_callback(self, data):
         """
-        This method handles the i2c read data message received from pymata_core.
+        This method handles the i2c read data message received from Wildcards Firmata.
         :param data: i2c read data callback message
         :returns:{"method": "i2c_read_request_reply", "params": [DATA_VALUE]}
         """
@@ -646,7 +645,7 @@ class WildServer:
 
     def i2c_read_data_callback(self, data):
         """
-        This method handles the i2c cached read data received from pymata_core.
+        This method handles the i2c cached read data received from Wildcards Firmata.
         :param data: i2c read cached data callback message
         :returns:{"method": "i2c_read_data_reply", "params": [DATA_VALUE]}
         """
@@ -655,10 +654,9 @@ class WildServer:
 
     def sonar_callback(self, data):
         """
-        This method handles sonar data received from pymata_core.
+        This method handles sonar data received from Wildcards Firmata.
         :param data: sonar data callback message
         :returns:{"method": "sonar_data_reply", "params": [DATA_VALUE]}
         """
         reply = json.dumps({"method": "sonar_data_reply", "params": data})
         asyncio.ensure_future(self.websocket.send(reply))
-

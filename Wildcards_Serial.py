@@ -1,6 +1,6 @@
 """
  Copyright (c) 2018 Dynamic Phase, LLC All rights reserved.
- 
+
  This program is free software; you can redistribute it and/or
  modify it under the terms of the GNU AFFERO GENERAL PUBLIC LICENSE
  Version 3 as published by the Free Software Foundation; either
@@ -76,19 +76,19 @@ class WildCardsSerial:
         for myport in myports:
             if myport.lower() not in self.locations:
                 #logstring("Adding found comport: {}".format(myport.lower()))
-                self.locations.insert(0,myport.lower())        
-        
+                self.locations.insert(0,myport.lower())
+
         #logstring("all locations: {}".format(self.locations))
-        
+
         #We will want to go back and add something to check for new com ports on request (remember the com22 issue, wasn't in list)
-          
+
         detected = None
 
         for device in self.locations:
             self.Ports.append(SerialPort(self, device))
         #logstring("Starting service")
         self.StartService() #does this go here?
-            
+
     def IsCurrentPortOpen(self):
         if self.CurrentPort is not None:
             return self.CurrentPort._IsPortOpen
@@ -96,16 +96,16 @@ class WildCardsSerial:
     def IsCurrentPortAvailable(self):
         if self.CurrentPort is not None:
             return self.CurrentPort.IsPortAvailable
-    
+
     def DidCurrentPortHaveError(self):
         if self.CurrentPort is not None:
             return self.CurrentPort.had_error
-            
+
     def AppendToPortList(self, portname):
         self._portlist.append(portname)
         #logstring("appending to port list {}".format(portname))
         self._parent.UpdatePortList(self._portlist)
-            
+
     def RemoveFromPortList(self, portname):
         self._portlist.remove(portname)
         logstring("Updating port list {}".format(self._portlist))
@@ -113,39 +113,39 @@ class WildCardsSerial:
 
     async def PortOpened(self):
         await self._parent.SerialOpened()
-        
+
     def PortClosed(self, com_port):
         self._parent.SerialClosed()
-        
+
     async def OpenNamedSerialPort(self, portname, clear_port_error_status = True):
         logstring("Opening port {}".format(portname))
         if portname not in self.locations: #add to locations if it isn't already in there
             self.locations.insert(0, portname)
             self.Ports.append(Port(self, portname))
-        
+
         for x in self.Ports:  #find the requested port in the list of ports
             if x.com_port == portname:
                 PortToOpen = x
-                
+
         #now that it is in the port list, we wait for it to become available
         if not PortToOpen.HasBeenCheckedForAvailability: #wait for avaialability checks to complete if needed
             await asyncio.sleep(self.sleep_tune)
-            
+
         if clear_port_error_status == True:
             PortToOpen.had_error = False
-            
-        if (PortToOpen.IsPortAvailable) and (PortToOpen.had_error == False): #port is available and operational 
+
+        if (PortToOpen.IsPortAvailable) and (PortToOpen.had_error == False): #port is available and operational
             logstring("Port is available without error")
             if self.CurrentPort is None:
                 self.CurrentPort = PortToOpen #assign the requested port as the current port
                 logstring("No current port, so opening the port now...")
-                await self.CurrentPort.open()  #and open the requested serial port     
+                await self.CurrentPort.open()  #and open the requested serial port
             else:
                 logstring("There is a CurrentPort already")
                 if (self.CurrentPort.IsPortOpen == False):
                     logstring("but it is not open so opening the new port now...")
                     self.CurrentPort = PortToOpen #switch to the requested port
-                    await self.CurrentPort.open()  #and open the requested serial port   
+                    await self.CurrentPort.open()  #and open the requested serial port
                 else:
                     if self.CurrentPort.com_port != portname: #CurrentPort is a different port than we want
                         logstring("but it is a different port than desired so close it and open the correct port")
@@ -153,8 +153,8 @@ class WildCardsSerial:
                         self.CurrentPort = PortToOpen #switch to the requested port
                         await self.CurrentPort.open()  #and open the requested serial port
                     #otherwise, we already have the requested port open, so ignore
-        # If the port isn't available, or has failed due to an error, there is nothing we can do to open it        
-    
+        # If the port isn't available, or has failed due to an error, there is nothing we can do to open it
+
     async def NextAvailablePort(self): #returns the name of the next available port
         HasLogstringChanged = True
         while True:
@@ -165,7 +165,7 @@ class WildCardsSerial:
                             HasLogstringChanged = True
                             return x
             else:
-                
+
                 FoundCurrentPort = False
                 #loop through all valid ports after the currently-selected one
                 for x in self.Ports:
@@ -176,16 +176,16 @@ class WildCardsSerial:
                             if x.IsPortAvailable and x.had_error == False:
                                 HasLogstringChanged = True
                                 return x
-                #loop through all ports, skipping only the one we are currently on. 
+                #loop through all ports, skipping only the one we are currently on.
                 for x in self.Ports:
                     if x.IsPortAvailable and x.had_error == False:
-                            return x    
+                            return x
             if HasLogstringChanged:
                 logstring("No available ports; waiting")
             HasLogstringChanged = False
-            
-            await asyncio.sleep(0.5)  #keep waiting for an available, non-erroneous port to show up        
-        
+
+            await asyncio.sleep(0.5)  #keep waiting for an available, non-erroneous port to show up
+
     # async def KeepTryingToOpenSerialPorts(self):
         # #loop through available ports, trying them out
         # #only try the ones that don't have a history of errors
@@ -198,17 +198,17 @@ class WildCardsSerial:
                 # else:
                     # myport = await self.NextAvailablePort()
                     # logstring("Got the next available port as {}".format(myport.com_port))
-                    # await self.OpenNamedSerialPort(myport.com_port, clear_port_error_status = False)      
+                    # await self.OpenNamedSerialPort(myport.com_port, clear_port_error_status = False)
                     # logstring("Finished sleeping in KTTOSP2")
             # else: #the current port was None
                 # myport = await self.NextAvailablePort()
                 # logstring("Got the next available port from None as {}".format(myport.com_port))
-                # await self.OpenNamedSerialPort(myport.com_port, clear_port_error_status = False)    
+                # await self.OpenNamedSerialPort(myport.com_port, clear_port_error_status = False)
                 # logstring("Finished opening Names Serial Port")
             # logstring("waiting2")
             # await asyncio.sleep(1)
             # logstring("Finished sleeping in KTTOSP3")
-            
+
     async def KeepTryingToOpenSerialPorts(self):
         #loop through available ports, trying them out
         #only try the ones that don't have a error history
@@ -225,34 +225,38 @@ class WildCardsSerial:
                     logstring("Port {} is NOT Open".format(self.CurrentPort.com_port, self.CurrentPort.IsPortOpen))
                     myport = await self.NextAvailablePort()
                     logstring("Next Available Port is {}".format(myport.com_port))
-                    await self.OpenNamedSerialPort(myport.com_port, clear_port_error_status = False)  
+                    await self.OpenNamedSerialPort(myport.com_port, clear_port_error_status = False)
             else: #the current port was None
                 HasLogstringChanged = True
                 myport = await self.NextAvailablePort()
                 logstring("Next Available Port is {}".format(myport.com_port))
                 await self.OpenNamedSerialPort(myport.com_port, clear_port_error_status = False)
             await asyncio.sleep(1)
- 
+
     def StartService(self):
         loop = asyncio.get_event_loop()
         logstring("Creating task to find and open serial ports")
         loop.create_task(self.KeepTryingToOpenSerialPorts())
         loop.create_task(self.Auto_Reader())
-        
+
     async def Auto_Reader(self):
         """
-        
+
         This polls the com port continuously for updates and store the result in ReadBuffer
 
         :returns: Never returns, loops forever until program is exited
         """
+        HasLogstringChanged = True
         while True:
             if (self.CurrentPort is not None):
+                HasLogstringChanged = True
                 myresult = await self.CurrentPort.read()
                 #logstring("reading from port again: {}".format(myresult))
                 if myresult is not None:
                     #logstring("found a char: {}".format(myresult))
                     self.ReadBuffer.append(myresult)
             else:
-                logstring("No active port connected; nothing to do")
+                if HasLogstringChanged:
+                    logstring("No active port connected; nothing to do")
+                    HasLogstringChanged = False
                 await asyncio.sleep(0.2)

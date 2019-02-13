@@ -1,7 +1,7 @@
 """
  Copyright (c) 2015-2017 Alan Yorinks All rights reserved.
  Copyright (c) 2018 Dynamic Phase, LLC All rights reserved.
- 
+
  This program is free software; you can redistribute it and/or
  modify it under the terms of the GNU AFFERO GENERAL PUBLIC LICENSE
  Version 3 as published by the Free Software Foundation; either
@@ -52,9 +52,9 @@ class WildcardsFirmata(WildcardsFirmataBaseObject):
 
     def __init__(self, parent=None, arduino_wait=2, sleep_tune=0.001, baud_rate=57600):
         super().__init__("WildCardsFirmata")
-        
+
         """
-        This is the "constructor" method for the PymataCore class.
+        This is the "constructor" method for the WildcardsFirmata class.
 
         If log_output is set to True, a log file called 'wildcards.log'
         will be created in the current directory and all output
@@ -63,7 +63,7 @@ class WildcardsFirmata(WildcardsFirmataBaseObject):
 
         :param arduino_wait: Amount of time to wait for Arduino to reset.
                              UNO takes 2 seconds, Leonardo can be zero
-        :param sleep_tune: This parameter sets the amount of time to default 
+        :param sleep_tune: This parameter sets the amount of time to default
                            for asyncio.sleep
         :param com_port: Manually selected com port - normally it is
                          auto-detected
@@ -72,14 +72,14 @@ class WildcardsFirmata(WildcardsFirmataBaseObject):
 
         :returns: This method never returns
         """
-        
+
         self.gothere = False
-                
+
         self._parent = parent
-         
+
         self.baud_rate = baud_rate
         self.byte_rate = baud_rate / 8  #57600 bps = 7200 Bps
-        
+
         self.sleep_tune = sleep_tune
         self.arduino_wait = arduino_wait
 
@@ -125,7 +125,7 @@ class WildcardsFirmata(WildcardsFirmataBaseObject):
         self._clear_stored_response_dictionaries()
 
         self._valid_target_exists = False
-        
+
         self.loop = None
         self.the_task = None
         self.serial_port = None
@@ -134,12 +134,12 @@ class WildcardsFirmata(WildcardsFirmataBaseObject):
         self.keep_alive_interval = 0
         self.period = 0
         self.margin = 0
-        
+
 
         # set up signal handler for controlC
         self.loop = asyncio.get_event_loop()
         self.the_task = self.loop.create_task(self._command_dispatcher())
-        
+
     def generate_byte_string(self):
         return super().generate_byte_string()
 
@@ -219,25 +219,25 @@ class WildcardsFirmata(WildcardsFirmataBaseObject):
         # the serial port is assigned
         self.read = None
         self.write = None
-        
+
         # a list of PinData objects - one for each pin segregate by pin type
         #these hold current values reported back, as well as callback functions
         self.analog_pins = []
         self.analog_pins_analog_numbering = []
         self.digital_pins = []
-        self.pixy_blocks = []        
-        
+        self.pixy_blocks = []
+
 
     def disconnect_port_due_to_error(self):
         self._parent.WildSerial.CurrentPort.had_error =  True
         self.remove_serial_port()
-        
+
     def remove_serial_port(self):
         self._valid_target_exists = False
         #self.serial_port = None
-        
+
         #clear ReadBuffer here too?
-       
+
     async def assign_serial_port(self, serial_manager):
         """
         This method is called any time a new serial port is assumed to have
@@ -245,38 +245,38 @@ class WildcardsFirmata(WildcardsFirmataBaseObject):
         a Firmata device based on the responses recieved.
         If it is not operating like a Firmata device, it is marked as having an error
         and ignored unless/until a new device is plugged into the serial port
-        
+
         Future: possibly attempt to load firmata?
         :returns: No return value.
          """
         #logstring("you are now in assign_serial_port")
         if serial_manager is None:
             return
-            
+
         if serial_manager.CurrentPort is None:
             return
-                        
+
         self._clear_stored_response_dictionaries()
 
         self.serial_manager = serial_manager
-        self.serial_port = serial_manager.CurrentPort   
+        self.serial_port = serial_manager.CurrentPort
         #to remove, only used for testing right now
         self.serial_port_name = serial_manager.CurrentPort.com_port
-        
+
         # set the read and write handles
         self.read = self.serial_manager.CurrentPort.read
         self.write = self.serial_manager.CurrentPort.write
 
         self._valid_target_exists = True
-        
+
 
         #keeps a direct reference to the pins
         self._digital_pins_directly = []
         self._analog_pins_directly = []
-        
+
         #and ports
         self._ports_directly = []
-        
+
         # wait for arduino to go through a reset cycle if need be
         logstring("Waiting for 2 seconds...")
         time.sleep(self.arduino_wait)
@@ -327,7 +327,7 @@ class WildcardsFirmata(WildcardsFirmataBaseObject):
             except TypeError:
                 self.disconnect_port_due_to_error()
                 return
-                
+
         capabilityreport = await self.get_capability_report()
         if not capabilityreport:
             logerr('*** Capability Report retrieval timed out. ***')
@@ -341,14 +341,14 @@ class WildcardsFirmata(WildcardsFirmataBaseObject):
                 return
             except TypeError:
                 self.disconnect_port_due_to_error()
-                return        
+                return
         # custom assemble the pin lists
         pininfo = iter(capabilityreport)
-        
-        
+
+
         self._nested_objects = []
-        
-        
+
+
         for i, analogpinmapping in enumerate(analogreport):
             #set up the data structure that captures data that comes from Firmata
             digital_data = PinData()
@@ -382,7 +382,7 @@ class WildcardsFirmata(WildcardsFirmataBaseObject):
                     if nextbyte == Constants.PULLUP:
                         HasPullup = True
                     if nextbyte == Constants.ANALOG:
-                        HasAnalog2 = True 
+                        HasAnalog2 = True
                         AnalogResolution = resolutionbyte
                         AnalogPinNum = analogpinmapping
                     if nextbyte == Constants.PWM:
@@ -398,18 +398,18 @@ class WildcardsFirmata(WildcardsFirmataBaseObject):
                     nextbyte = next(pininfo)
             except StopIteration:
                 pass
-                
+
             if HasAnalog2 != HasAnalog:
                 #this really shouldn't happen, but might as well catch it anyway
                 raise Exception("The Analog Pin Map disagrees with the Capabilty Report as to whether pin {} is an analog pin".format(i))
-            
+
             #this sets the pin number 0-7 within each port
             if pin_num_within_port == 0: #Yay, new port, create it:
                 current_port = Port("Port {}".format(port_num),
                                                    port_num)
                 self._nested_objects.append(current_port)
                 self._ports_directly.append(current_port)
-            
+
             newpin = Pin(ID = "Pin {} of Port {} hasanalog = {}".format(pin_num_within_port,
                                                                        port_num, HasAnalog),
                                        PinNum = i, HasInput=HasInput,
@@ -422,8 +422,8 @@ class WildcardsFirmata(WildcardsFirmataBaseObject):
             logstring("Appending a new pin {}   len {}".format(newpin._ID, len(self._digital_pins_directly)))
             if HasAnalog:
                 self._analog_pins_directly.append(newpin)
-                
-            
+
+
 
         logstring('Auto-discovery complete. Found ' + \
                  str(len(self.digital_pins)) + ' Digital Pins and ' + \
@@ -435,17 +435,17 @@ class WildcardsFirmata(WildcardsFirmataBaseObject):
 
         self.KeepAlive = KeepAlive("Keep Alive")
         self._nested_objects.append(self.KeepAlive)
-        
+
         self.Tone = Tone("Tone", self._numpins)
         self._nested_objects.append(self.Tone)
-        
+
         #self.EncoderConfig = EncoderConfig("Encoder Config", self._numpins)
         #self._nested_objects.append(self.EncoderConfig)
-        
+
 
     def AssignSerialPort(self, port):
         self.SerialPort = port
-        
+
     def analog_read(self, pin):
         """
         Retrieve the last data update for the specified analog pin.
@@ -459,7 +459,7 @@ class WildcardsFirmata(WildcardsFirmataBaseObject):
         """
         Set the selected pin to the specified value. This will use ANALOG_MESSAGE if possible,
         but switch to extended analog sysex message if pin is out of range
-        
+
         :param pin: PWM pin number
         :param value: Pin value (0 - 0x4000) or (0 - 16384). In PWM mode, this sets a duty cycle between 0 to 255. In Servo mode, when the values are 0-180, the units are degrees. Values up to 544 are maxed out at 180 degrees. Beyond 544, the units are microseconds of the pulse duration (typical guaranteed servo range is 1ms to 2ms, but often goes a bit beyond thaton either end)
         :returns: No return value
@@ -508,7 +508,7 @@ class WildcardsFirmata(WildcardsFirmataBaseObject):
         :returns: No return value
         """
         self._ports_directly[port].DigitalWrite(value)
-        
+
     def disable_analog_reporting(self, pin):
         """
         Disables analog reporting for a single analog pin.
@@ -584,7 +584,7 @@ class WildcardsFirmata(WildcardsFirmataBaseObject):
         in the "port" - this is part of Firmata's protocol specification.
 
         :param pin: The pin for which reporting should be turned on. Firmata
-                    will turn on reporting for the entire report, whether you 
+                    will turn on reporting for the entire report, whether you
                     like it or not. So it goes...
         :returns: No return value
         """
@@ -705,14 +705,14 @@ class WildcardsFirmata(WildcardsFirmataBaseObject):
                 if elapsed_time - current_time > 3:
                     #logstring("really took too long:  {}  {}   {}".format(elapsed_time, current_time, elapsed_time - current_time))
                     return None
-                #logstring("7")    
+                #logstring("7")
                 if self.serial_port.IsPortOpen == False:
                     #logstring("Looks like that port wasn't working!!!!!!!!!!!!!")
                     return None
                 await asyncio.sleep(self.sleep_tune)
                 #logstring("8")
             #logstring("Geez, that took:  {}  {}   {}        ??????????????????".format(elapsed_time, current_time, elapsed_time - current_time))
-                
+
         reply = ''
         #logstring("9")
         for x in self.query_reply_data.get(PrivateConstants.REPORT_FIRMWARE):
@@ -816,7 +816,7 @@ class WildcardsFirmata(WildcardsFirmataBaseObject):
             self.i2c_map[address] = {'value': None, 'callback': cb}
         if register is None:
             data = [address, read_type, number_of_bytes & 0x7f,
-                    (number_of_bytes >> 7) & 0x7f]        
+                    (number_of_bytes >> 7) & 0x7f]
         else:
             data = [address, read_type, register & 0x7f, (register >> 7) & 0x7f,
                     number_of_bytes & 0x7f, (number_of_bytes >> 7) & 0x7f]
@@ -838,8 +838,8 @@ class WildcardsFirmata(WildcardsFirmataBaseObject):
         """
         data = [address, Constants.I2C_STOP_READING]
         await self._send_sysex(PrivateConstants.I2C_REQUEST, data)
-        
-        
+
+
     async def i2c_write_request(self, address, args):
         """
         Write data to an i2c device.
@@ -888,7 +888,7 @@ class WildcardsFirmata(WildcardsFirmataBaseObject):
         """
         if tone_command == Constants.TONE_TONE:
             self.Tone.play_tone(pin, frequency, duration)
-        if tone_command == Constants.TONE_NO_TONE:   
+        if tone_command == Constants.TONE_NO_TONE:
             self.Tone.stop_tone(pin)
 
 
@@ -984,7 +984,7 @@ class WildcardsFirmata(WildcardsFirmataBaseObject):
         :returns: No return value
         """
 
-        # There is a potential start up race condition when running pymata3.
+        # There is a potential start up race condition when running.
         # This is a workaround for that race condition
         #
         if not len(self.digital_pins):
@@ -1236,7 +1236,7 @@ class WildcardsFirmata(WildcardsFirmataBaseObject):
                         # we need to yield back to the loop
                         await asyncio.sleep(self.sleep_tune)
                         continue
-                    #logstring("finished this read cycle")                        
+                    #logstring("finished this read cycle")
                 except ConnectionAbortedError as ex:
                     logstring(ex)
                     #print("An exception occurred on the asyncio event loop while receiving data.  Invalid message.")
@@ -1333,7 +1333,7 @@ class WildcardsFirmata(WildcardsFirmataBaseObject):
                     # is there a latch entry for this pin?
                     key = 'D' + str(pin)
                     if key in self.latch_map:
-                        await self._check_latch_data(key, port_data & 0x01)       
+                        await self._check_latch_data(key, port_data & 0x01)
                 port_data >>= 1
             #logstring("finished digital message function")
         except Exception as inst:
@@ -1420,7 +1420,7 @@ class WildcardsFirmata(WildcardsFirmataBaseObject):
         It handles replies to i2c_read requests. It stores the data
         for each i2c device address in a dictionary called i2c_map.
         The data may be retrieved via a polling call to i2c_get_read_data().
-        If a callback was specified in pymata.i2c_read, the raw data is sent
+        If a callback was specified in i2c_read, the raw data is sent
         through the callback
 
         :param data: raw data returned from i2c device
@@ -1479,7 +1479,7 @@ class WildcardsFirmata(WildcardsFirmataBaseObject):
         """
         # first byte after command is major number
         firmware_report_iterator = iter(sysex_data)
-        
+
         major = sysex_data[1]
         version_string = str(major)
 
@@ -1738,8 +1738,8 @@ class WildcardsFirmata(WildcardsFirmataBaseObject):
                 #logstring("{}".format(data))
                 self.write(data)
         #await asyncio.sleep(0.1)
-        
-        
+
+
     async def _wait_for_data(self, current_command, number_of_bytes):
         """
         This is a private utility method.
@@ -1756,23 +1756,23 @@ class WildcardsFirmata(WildcardsFirmataBaseObject):
             number_of_bytes -= 1
         return current_command
 
-    async def write_continuously(self):            
+    async def write_continuously(self):
         start_time = time.perf_counter()
         end_time = time.perf_counter()
         while True:
             #take everything that needs to be written and store it as a byte string
             data = self.generate_byte_string()
             #logstring("sending byte string {}".format(data))
-            
-            
-            
+
+
+
             #estimate how long the write will take, and add  a little
             #extra downtime ( like 10% could be removed for throughput reasons later)
             #the idea behind the extra downtime is that sometimes writing data will
             #block program execution (depends on the USB-UART driver, e.g the Windows Driver
             #will block, but FTDI's VCP won't block until/unless the buffers are full)
             write_time = self._estimate_write_time(data) * 1.1
-            
+
             #set the sleep time to the write time + margin, or the tune time (typ 1ms),
             #whichever is larger
             if write_time < self.sleep_tune:
@@ -1784,12 +1784,12 @@ class WildcardsFirmata(WildcardsFirmataBaseObject):
                 #if there was nothing to write, just set the write time back to the tune time
                 write_time = self.sleep_tune
             end_time = time.perf_counter()
-            
+
             #sleep until the tune time is up, or the write time + margin has expired (whichever is greater)
             if end_time - start_time < write_time:
                 await asyncio.sleep(write_time - (end_time - start_time))
-    
-    
+
+
     def _estimate_write_time(self, data):
         """
         This is a private utility method.
@@ -1802,9 +1802,9 @@ class WildcardsFirmata(WildcardsFirmataBaseObject):
         """
         return (len(data.encode('utf-8'))/(self.byte_rate))*1.25
         #1.25 multiplier accounts for start & stop bits
-       
 
-        
+
+
     async def read_next_byte(self):
         while True:
             #logstring("So we're in --...")
@@ -1824,9 +1824,7 @@ class WildcardsFirmata(WildcardsFirmataBaseObject):
 
 async def read_nothing():
     return None
-    
-    
+
+
 async def write_nothing(data):
     return None
-
-    
